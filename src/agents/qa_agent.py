@@ -1,7 +1,6 @@
 # src/agents/qa_agent.py
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
-from src.lib.system_prompt_generator import SystemPromptGenerator
 from pydantic import Field
 
 
@@ -47,31 +46,8 @@ class QualityAssuranceAgent(BaseAgent):
             TranslationToolConfig(api_key=settings.mistral_api_key)
         )
 
-        # System prompt
-        system_prompt = SystemPromptGenerator(
-            background=[
-                f"You are a quality assurance agent ensuring accurate answers in {config.language}.",
-                "You verify information against source documents.",
-                "You ensure all claims are properly cited and factually correct.",
-            ],
-            steps=[
-                "1. Generate a natural language answer from retrieved data",
-                "2. Fact-check each claim against source documents",
-                "3. Add citations for all factual claims",
-                "4. Validate answer completeness (did we answer the question?)",
-                "5. Validate answer accuracy (is everything correct?)",
-                "6. Return final answer with quality score",
-            ],
-            output_instructions=[
-                f"Answer must be in {config.language}",
-                "Include source citations (product name, SKU, PDF)",
-                "Be concise but complete",
-                "If data is missing or uncertain, explicitly state this",
-                "Provide confidence score for the answer",
-            ],
-        )
-
-        super().__init__(config=config, system_prompt_generator=system_prompt)
+        # Initialize base agent
+        super().__init__(config)
 
     def generate_answer(self, query: str, search_results: dict) -> dict:
         """Generate and validate answer with translation support"""

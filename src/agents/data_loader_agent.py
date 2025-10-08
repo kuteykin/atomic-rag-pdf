@@ -1,7 +1,6 @@
 # src/agents/data_loader_agent.py
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
-from src.lib.system_prompt_generator import SystemPromptGenerator
 from pydantic import Field
 
 
@@ -50,40 +49,19 @@ class DataLoaderAgent(BaseAgent):
         )
         self.embedding_tool = EmbeddingTool(EmbeddingToolConfig())
 
-        # System prompt
-        system_prompt = SystemPromptGenerator(
-            background=[
-                "You are a specialized data loading agent for product documentation.",
-                "Your task is to process PDF documents containing product specifications.",
-                "Extract structured data and store it in both relational and vector databases.",
-            ],
-            steps=[
-                "1. Read PDF file using OCR tool",
-                "2. Parse extracted text to identify product specifications",
-                "3. Store structured data in SQLite database",
-                "4. Generate embeddings for text chunks",
-                "5. Store embeddings in Qdrant vector database",
-                "6. Ensure data consistency between both databases",
-            ],
-            output_instructions=[
-                "Report the number of products processed",
-                "Report any errors encountered",
-                "Provide summary statistics of stored data",
-            ],
-        )
-
-        super().__init__(config=config, system_prompt_generator=system_prompt)
+        # Initialize base agent
+        super().__init__(config)
 
     def process_pdf(self, pdf_path: str) -> dict:
         """Process a single PDF file"""
 
         # Step 1: OCR extraction
-        self.memory.add_message("user", f"Extract text from: {pdf_path}")
+        print(f"📄 Extracting text from: {pdf_path}")
         ocr_result = self.ocr_tool.run(pdf_path)
 
         # Step 2: Parse structured data
-        self.memory.add_message("assistant", f"OCR completed. Parsing structure...")
-        parsed_products = self.parser_tool.run(ocr_result.text)
+        print(f"🔍 Parsing structured data...")
+        parsed_products = self.parser_tool.run(ocr_result["text"])
 
         # Step 3: Store in SQLite
         sqlite_ids = []
@@ -123,13 +101,20 @@ class DataLoaderAgent(BaseAgent):
             "qdrant_points": len(qdrant_ids),
         }
 
-    def process_directory(self, directory: str = None) -> dict:
-        """Process all PDFs in directory"""
+    def process_directory(self, directory: str = None, limit: int = None) -> dict:
+        """Process PDFs in directory with optional limit"""
         import os
         from pathlib import Path
 
         dir_path = directory or self.config.pdf_directory
         pdf_files = list(Path(dir_path).glob("*.pdf"))
+
+        # Apply limit if specified
+        if limit is not None:
+            pdf_files = pdf_files[:limit]
+            print(f"📄 Processing first {len(pdf_files)} PDF files (limit: {limit})")
+        else:
+            print(f"📄 Processing all {len(pdf_files)} PDF files")
 
         results = []
         for pdf_file in pdf_files:

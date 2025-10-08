@@ -1,7 +1,6 @@
 # src/agents/research_agent.py
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
-from src.lib.system_prompt_generator import SystemPromptGenerator
 from pydantic import Field
 from typing import Literal
 
@@ -51,29 +50,8 @@ class ResearchAgent(BaseAgent):
             TranslationToolConfig(api_key=settings.mistral_api_key)
         )
 
-        # System prompt
-        system_prompt = SystemPromptGenerator(
-            background=[
-                "You are a research agent specializing in product information retrieval.",
-                "You work with lighting products (Leuchten, Leuchtmittel).",
-                "Your goal is to find the most relevant information for user queries.",
-            ],
-            steps=[
-                "1. Classify the query type (exact match, attribute filter, semantic, or hybrid)",
-                "2. Execute the appropriate search strategy based on query type",
-                "3. Retrieve initial candidate results",
-                "4. Rerank results by relevance to the original query",
-                "5. Return top-k most relevant results with context",
-            ],
-            output_instructions=[
-                "Return structured results with product details",
-                "Include relevance scores",
-                "Provide source references (PDF, page number)",
-                "Explain which search strategy was used",
-            ],
-        )
-
-        super().__init__(config=config, system_prompt_generator=system_prompt)
+        # Initialize base agent
+        super().__init__(config)
 
     def search(self, query: str) -> dict:
         """Execute intelligent search based on query type with translation support"""

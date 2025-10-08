@@ -19,11 +19,12 @@ console = Console()
 
 @app.command()
 def load(
-    pdf_dir: str = typer.Option(
-        "./data/pdfs", "--pdf-dir", help="Directory containing PDF files"
-    )
+    pdf_dir: str = typer.Option("./data/pdfs", "--pdf-dir", help="Directory containing PDF files"),
+    limit: int = typer.Option(
+        None, "--limit", "-l", help="Limit number of PDFs to process (e.g., 10 for first 10 files)"
+    ),
 ):
-    """Load and process PDF documents"""
+    """Load and process PDF documents with optional batch limit"""
     console.print(Panel("🔄 Initializing Data Loader Agent...", style="blue"))
 
     try:
@@ -31,9 +32,9 @@ def load(
         loader_config = DataLoaderAgentConfig(pdf_directory=pdf_dir)
         loader_agent = DataLoaderAgent(loader_config)
 
-        # Process all PDFs
+        # Process PDFs with optional limit
         console.print(Panel("📄 Processing PDFs...", style="blue"))
-        results = loader_agent.process_directory()
+        results = loader_agent.process_directory(limit=limit)
 
         # Display results
         table = Table(title="Processing Results")
@@ -62,9 +63,7 @@ def load(
 @app.command()
 def search(
     query: str = typer.Argument(..., help="Search query"),
-    pdf_dir: str = typer.Option(
-        "./data/pdfs", "--pdf-dir", help="Directory containing PDF files"
-    ),
+    pdf_dir: str = typer.Option("./data/pdfs", "--pdf-dir", help="Directory containing PDF files"),
 ):
     """Search for information in processed documents"""
     console.print(Panel(f"🔍 Searching for: {query}", style="blue"))
@@ -87,12 +86,12 @@ def search(
 
         # Display results
         console.print(Panel(f"Query: {answer['query']}", style="bold blue"))
-        
+
         # Show translation info if applicable
         if answer.get("translation_needed"):
             console.print(f"[yellow]Language detected: {answer['detected_language']}[/yellow]")
             console.print(f"[yellow]Translated query: {answer['english_query']}[/yellow]")
-        
+
         console.print(Panel(answer["answer"], style="white"))
 
         # Display metadata
