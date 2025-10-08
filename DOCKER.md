@@ -20,7 +20,19 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 
 ### 2. Build and Run
 
-**Option A: Using Build Script (Recommended)**
+**Option A: Using Run Script (Recommended)**
+```bash
+# Build image first
+./docker-build.sh
+
+# Easy run with automatic MISTRAL_API_KEY handling
+./docker-run.sh                    # Basic run
+./docker-run.sh -s                # With persistent storage
+./docker-run.sh -s -d              # With storage and data
+./docker-run.sh -p 8502            # Different port
+```
+
+**Option B: Using Build Script**
 ```bash
 # Build image
 ./docker-build.sh
@@ -32,7 +44,7 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 ./docker-build.sh -p
 ```
 
-**Option B: Direct Docker**
+**Option C: Direct Docker**
 ```bash
 # Build image
 docker build -t atomic-rag:latest .
@@ -97,13 +109,15 @@ STREAMLIT_SERVER_ADDRESS=0.0.0.0
 # Build image
 ./docker-build.sh
 
-# Run with web interface
+# Easy run (automatically handles MISTRAL_API_KEY)
+./docker-run.sh                    # Basic run
+./docker-run.sh -s                # With persistent storage
+./docker-run.sh -s -d              # With storage and data
+./docker-run.sh -p 8502            # Different port
+
+# Manual run (requires MISTRAL_API_KEY)
 docker run -p 8501:8501 -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
-
-# Run with persistent storage
 docker run -p 8501:8501 -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
-
-# Run with PDF data mount
 docker run -p 8501:8501 -v $(pwd)/data:/app/data:ro -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
 ```
 

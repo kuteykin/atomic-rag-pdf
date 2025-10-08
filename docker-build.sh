@@ -74,10 +74,15 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if .env file exists
-if [ ! -f ".env" ]; then
-    echo -e "${YELLOW}⚠️  Warning: .env file not found.${NC}"
-    echo -e "${YELLOW}   Make sure to set MISTRAL_API_KEY environment variable.${NC}"
+# Check if .env file exists or MISTRAL_API_KEY is set
+if [ ! -f ".env" ] && [ -z "$MISTRAL_API_KEY" ]; then
+    echo -e "${YELLOW}⚠️  Warning: .env file not found and MISTRAL_API_KEY not set.${NC}"
+    echo -e "${YELLOW}   Make sure to set MISTRAL_API_KEY environment variable or create .env file.${NC}"
+    echo -e "${YELLOW}   Example: echo 'MISTRAL_API_KEY=your_key_here' > .env${NC}"
+elif [ -f ".env" ]; then
+    echo -e "${GREEN}✅ Found .env file${NC}"
+elif [ -n "$MISTRAL_API_KEY" ]; then
+    echo -e "${GREEN}✅ MISTRAL_API_KEY environment variable is set${NC}"
 fi
 
 # Build the image
@@ -110,13 +115,14 @@ fi
 # Show run commands
 echo ""
 echo -e "${BLUE}🚀 Run Commands:${NC}"
-echo -e "${GREEN}Web Interface (Backend + Frontend):${NC}"
+echo -e "${GREEN}Easy Run Script (Recommended):${NC}"
+echo "  ./docker-run.sh                    # Basic run"
+echo "  ./docker-run.sh -s                # With persistent storage"
+echo "  ./docker-run.sh -s -d              # With storage and data"
+echo ""
+echo -e "${GREEN}Manual Docker Commands:${NC}"
 echo "  docker run -p 8501:8501 -e MISTRAL_API_KEY=\$MISTRAL_API_KEY $TAG:latest"
-echo ""
-echo -e "${GREEN}With Persistent Storage:${NC}"
 echo "  docker run -p 8501:8501 -v \$(pwd)/storage:/app/storage -e MISTRAL_API_KEY=\$MISTRAL_API_KEY $TAG:latest"
-echo ""
-echo -e "${GREEN}With PDF Data Mount:${NC}"
 echo "  docker run -p 8501:8501 -v \$(pwd)/data:/app/data:ro -v \$(pwd)/storage:/app/storage -e MISTRAL_API_KEY=\$MISTRAL_API_KEY $TAG:latest"
 echo ""
 echo -e "${GREEN}CLI Commands (override default):${NC}"

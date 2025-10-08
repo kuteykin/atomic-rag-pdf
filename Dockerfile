@@ -1,6 +1,9 @@
 # Single-container Dockerfile for Atomic RAG System
 # Backend + Streamlit Frontend in one container
 # Optimized for Python 3.10 with CPU-only ML models
+# 
+# REQUIRED: MISTRAL_API_KEY environment variable must be provided at runtime
+# Usage: docker run -e MISTRAL_API_KEY=your_key atomic-rag:latest
 
 FROM python:3.10-slim
 

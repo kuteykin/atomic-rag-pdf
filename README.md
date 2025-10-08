@@ -265,14 +265,14 @@ poetry run python main.py test
 # Build Docker image
 ./docker-build.sh
 
-# Run with web interface
+# Easy run (automatically handles MISTRAL_API_KEY)
+./docker-run.sh                    # Basic run
+./docker-run.sh -s                # With persistent storage
+./docker-run.sh -s -d              # With storage and data
+
+# Manual run (requires MISTRAL_API_KEY)
 docker run -p 8501:8501 -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
-
-# Run with persistent storage
 docker run -p 8501:8501 -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
-
-# Run with PDF data mount
-docker run -p 8501:8501 -v $(pwd)/data:/app/data:ro -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
 ```
 
 **Features:**
@@ -1044,6 +1044,7 @@ Nexus/
 ├── launch_streamlit.sh      # Streamlit launcher script
 ├── Dockerfile               # Single-container Docker image
 ├── docker-build.sh         # Docker build script
+├── docker-run.sh           # Docker run script (handles MISTRAL_API_KEY)
 ├── .dockerignore            # Docker ignore file
 ├── DOCKER.md                # Docker deployment guide
 ├── setup.sh                # Automated setup script
@@ -1235,7 +1236,7 @@ poetry run python main.py test                # ✅ System integration
 - **Intelligent Search**: Query classification, semantic + exact search, reranking
 - **Quality Assurance**: Fact-checking, citations, confidence scoring
 
-#### File Structure (44 files total)
+#### File Structure (45 files total)
 ```
 Nexus/
 ├── src/                    # 30 Python files (simplified)
@@ -1254,6 +1255,7 @@ Nexus/
 ├── launch_streamlit.sh    # Streamlit launcher script
 ├── Dockerfile             # Single-container Docker image
 ├── docker-build.sh        # Docker build script
+├── docker-run.sh          # Docker run script (handles MISTRAL_API_KEY)
 ├── .dockerignore          # Docker ignore file
 ├── DOCKER.md              # Docker deployment guide
 ├── pyproject.toml         # Poetry configuration
