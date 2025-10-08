@@ -257,6 +257,32 @@ poetry run python main.py test
 
 ```
 
+### 🐳 Docker Deployment
+
+**Single Container (Backend + Frontend):**
+
+```bash
+# Build Docker image
+./docker-build.sh
+
+# Run with web interface
+docker run -p 8501:8501 -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
+
+# Run with persistent storage
+docker run -p 8501:8501 -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
+
+# Run with PDF data mount
+docker run -p 8501:8501 -v $(pwd)/data:/app/data:ro -v $(pwd)/storage:/app/storage -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
+```
+
+**Features:**
+- ✅ **Single Container**: Backend + Streamlit frontend in one image
+- ✅ **Auto-Initialization**: Databases initialized on startup
+- ✅ **Persistent Storage**: Volume mounts for data persistence
+- ✅ **Security**: Non-root user, minimal attack surface
+- ✅ **Health Checks**: Built-in monitoring
+- ✅ **Multi-Architecture**: Support for AMD64 and ARM64
+
 ### 📦 Batch Processing
 
 The system supports efficient batch processing of PDF documents:
@@ -1016,6 +1042,10 @@ Nexus/
 ├── main.py                  # CLI entry point
 ├── streamlit_app.py         # Web frontend (Streamlit)
 ├── launch_streamlit.sh      # Streamlit launcher script
+├── Dockerfile               # Single-container Docker image
+├── docker-build.sh         # Docker build script
+├── .dockerignore            # Docker ignore file
+├── DOCKER.md                # Docker deployment guide
 ├── setup.sh                # Automated setup script
 ├── pyproject.toml          # Poetry configuration
 ├── test_basic.py           # Basic functionality test
@@ -1205,7 +1235,7 @@ poetry run python main.py test                # ✅ System integration
 - **Intelligent Search**: Query classification, semantic + exact search, reranking
 - **Quality Assurance**: Fact-checking, citations, confidence scoring
 
-#### File Structure (40 files total)
+#### File Structure (44 files total)
 ```
 Nexus/
 ├── src/                    # 30 Python files (simplified)
@@ -1222,6 +1252,10 @@ Nexus/
 ├── main.py                # CLI entry point
 ├── streamlit_app.py       # Web frontend (Streamlit)
 ├── launch_streamlit.sh    # Streamlit launcher script
+├── Dockerfile             # Single-container Docker image
+├── docker-build.sh        # Docker build script
+├── .dockerignore          # Docker ignore file
+├── DOCKER.md              # Docker deployment guide
 ├── pyproject.toml         # Poetry configuration
 └── README.md              # Complete documentation
 ```
