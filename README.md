@@ -106,7 +106,7 @@ poetry run python test_basic.py
 ```bash
 # 1. Clone repository
 git clone <your-repo-url>
-cd Nexus
+cd atomic-rag-pdf
 
 # 2. Run automated setup script
 chmod +x setup.sh
@@ -124,7 +124,7 @@ The setup script will:
 ```bash
 # 1. Clone repository
 git clone <your-repo-url>
-cd Nexus
+cd atomic-rag-pdf
 
 # 2. Install dependencies with Poetry
 poetry install
@@ -372,50 +372,50 @@ poetry run python main.py search "Quelles lumières conviennent à la salle d'op
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         AGENT 1                                  │
-│                    DATA LOADER AGENT                             │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │ Tools:                                                     │ │
-│  │  • MistralOCRTool (PDF → Text, mistral-ocr-latest)       │ │
-│  │  • StructuredParserTool (Extract product specs)          │ │
-│  │  • SQLiteStorageTool (Store structured data)             │ │
-│  │  • QdrantStorageTool (Store embeddings)                  │ │
-│  │  • EmbeddingTool (Text → Vectors, CPU-only)              │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  Input: PDF files from ./data/pdfs (100+ files ready)          │
+│                         AGENT 1                                 │
+│                    DATA LOADER AGENT                            │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ Tools:                                                    │  │
+│  │  • MistralOCRTool (PDF → Text, mistral-ocr-latest)        │  │
+│  │  • StructuredParserTool (Extract product specs)           │  │
+│  │  • SQLiteStorageTool (Store structured data)              │  │
+│  │  • QdrantStorageTool (Store embeddings)                   │  │
+│  │  • EmbeddingTool (Text → Vectors, CPU-only)               │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  Input: PDF files from ./data/pdfs (100+ files ready)           │
 │  Output: Populated SQLite + Qdrant databases                    │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                         AGENT 2                                  │
-│                    RESEARCH AGENT                                │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │ Tools:                                                     │ │
-│  │  • TranslationTool (Multilingual support)                 │ │
-│  │  • QueryClassifierTool (Semantic vs Exact vs Filter)      │ │
-│  │  • SQLiteSearchTool (Exact/filter queries)               │ │
-│  │  • QdrantSearchTool (Semantic search)                    │ │
-│  │  • HybridSearchTool (Combined search strategies)          │ │
-│  │  • RerankerTool (Cross-encoder relevance)                │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  Input: User query (any language)                                │
+│                         AGENT 2                                 │
+│                    RESEARCH AGENT                               │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ Tools:                                                    │  │
+│  │  • TranslationTool (Multilingual support)                 │  │
+│  │  • QueryClassifierTool (Semantic vs Exact vs Filter)      │  │
+│  │  • SQLiteSearchTool (Exact/filter queries)                │  │
+│  │  • QdrantSearchTool (Semantic search)                     │  │
+│  │  • HybridSearchTool (Combined search strategies)          │  │
+│  │  • RerankerTool (Cross-encoder relevance)                 │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  Input: User query (any language)                               │
 │  Output: Top-k relevant results with context                    │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                         AGENT 3                                  │
-│               QUALITY ASSURANCE AGENT                            │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │ Tools:                                                     │ │
-│  │  • AnswerGeneratorTool (LLM synthesis)                   │ │
-│  │  • FactCheckerTool (Verify against sources)              │ │
-│  │  • CitationTool (Add source references)                  │ │
-│  │  • ValidationTool (Check completeness & accuracy)        │ │
-│  │  • TranslationTool (Translate answers back)              │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                  │
+│                         AGENT 3                                 │
+│               QUALITY ASSURANCE AGENT                           │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ Tools:                                                    │  │
+│  │  • AnswerGeneratorTool (LLM synthesis)                    │  │
+│  │  • FactCheckerTool (Verify against sources)               │  │
+│  │  • CitationTool (Add source references)                   │  │
+│  │  • ValidationTool (Check completeness & accuracy)         │  │
+│  │  • TranslationTool (Translate answers back)               │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
 │  Input: Query + Retrieved results                               │
 │  Output: Verified, cited answer in user's language              │
 └─────────────────────────────────────────────────────────────────┘
@@ -443,12 +443,6 @@ poetry run pytest tests/test_integration.py -v
 
 ```bash
 # Basic functionality test (no dependencies)
-poetry run python test_basic.py
-
-# OCR model testing
-poetry run python test_basic.py
-
-# Translation functionality test
 poetry run python test_basic.py
 
 # Full system test (validates all test queries)
@@ -574,18 +568,6 @@ def batch_process_pdfs(pdf_directory, batch_size=100):
 - Use connection pooling for concurrent access
 - Add query result caching
 
-```python
-# Database sharding example
-class ShardedDatabaseManager:
-    def __init__(self, shard_count=4):
-        self.shards = []
-        for i in range(shard_count):
-            shard_path = f"./storage/products_shard_{i}.db"
-            self.shards.append(SQLiteStorageTool(shard_path))
-    
-    def get_shard(self, product_id):
-        return self.shards[hash(product_id) % len(self.shards)]
-```
 
 #### 3. Processing Pipeline Enhancement
 
@@ -595,31 +577,6 @@ class ShardedDatabaseManager:
 - Batch PDF processing for efficiency
 - Parallel embedding generation
 
-```python
-# Async processing implementation
-import asyncio
-from celery import Celery
-
-app = Celery('pdf_processor')
-
-@app.task
-def process_pdf_batch(pdf_paths):
-    """Process multiple PDFs in parallel"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    async def process_single_pdf(pdf_path):
-        # Process individual PDF
-        return await process_pdf_async(pdf_path)
-    
-    # Process all PDFs concurrently
-    results = loop.run_until_complete(
-        asyncio.gather(*[process_single_pdf(p) for p in pdf_paths])
-    )
-    
-    return results
-```
-
 #### 4. Caching Strategy
 
 **For 10,000+ PDFs**:
@@ -628,40 +585,6 @@ def process_pdf_batch(pdf_paths):
 - Use Redis for session storage and caching
 - Implement query result caching
 
-```python
-# Redis caching implementation
-import redis
-from functools import wraps
-
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
-
-def cache_result(expiry=3600):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            cache_key = f"{func.__name__}:{hash(str(args) + str(kwargs))}"
-            
-            # Check cache first
-            cached_result = redis_client.get(cache_key)
-            if cached_result:
-                return json.loads(cached_result)
-            
-            # Compute result
-            result = func(*args, **kwargs)
-            
-            # Cache result
-            redis_client.setex(cache_key, expiry, json.dumps(result))
-            
-            return result
-        return wrapper
-    return decorator
-
-@cache_result(expiry=7200)  # Cache for 2 hours
-def semantic_search(query, top_k=10):
-    # Expensive semantic search operation
-    return qdrant_client.search(query, top_k)
-```
-
 #### 5. Infrastructure Scaling
 
 **For 10,000+ PDFs**:
@@ -669,32 +592,6 @@ def semantic_search(query, top_k=10):
 - Load balancing for multiple instances
 - Horizontal scaling with microservices architecture
 - Kubernetes orchestration
-
-```dockerfile
-# Dockerfile for containerized deployment
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install Poetry
-RUN pip install poetry
-
-# Copy dependency files
-COPY pyproject.toml poetry.lock ./
-
-# Install dependencies
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev
-
-# Copy application code
-COPY . .
-
-# Expose port
-EXPOSE 8000
-
-# Run application
-CMD ["poetry", "run", "python", "main.py", "serve"]
-```
 
 ### Performance Projections
 
@@ -773,72 +670,6 @@ cp .env.example .env
 
 # Or run the setup script
 ./setup.sh
-```
-
-#### Complete .env Template
-```bash
-# Atomic RAG System - Environment Configuration
-# Mistral API key should be set in system environment variables
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-# SQLite database path
-SQLITE_PATH=./storage/products.db
-
-# Qdrant vector database path
-QDRANT_PATH=./storage/qdrant_storage
-
-# =============================================================================
-# PDF PROCESSING
-# =============================================================================
-# Directory containing PDF files to process
-PDF_DIRECTORY=./data/pdfs
-
-# =============================================================================
-# MODEL CONFIGURATION
-# =============================================================================
-# LLM model for answer generation
-LLM_MODEL=mistral-large-latest
-
-# Embedding model (CPU-only, English-optimized)
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-# OCR model (optimal for English PDFs)
-OCR_MODEL=mistral-ocr-latest
-
-# Reranking model for search results
-RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
-
-# =============================================================================
-# SEARCH CONFIGURATION
-# =============================================================================
-# Number of results to rerank
-RERANK_TOP_K=10
-
-# Final number of results to return
-FINAL_TOP_K=5
-
-# =============================================================================
-# TEXT PROCESSING
-# =============================================================================
-# Text chunk size for processing
-CHUNK_SIZE=500
-
-# Text chunk overlap
-CHUNK_OVERLAP=50
-
-# =============================================================================
-# LANGUAGE SETTINGS
-# =============================================================================
-# Default language for processing
-DEFAULT_LANGUAGE=en
-
-# =============================================================================
-# LOGGING
-# =============================================================================
-# Logging level (DEBUG, INFO, WARNING, ERROR)
-LOG_LEVEL=INFO
 ```
 
 ### 🚀 Quick Setup
@@ -1003,7 +834,7 @@ For production deployment:
 ## 📁 Project Structure
 
 ```
-Nexus/
+atomic-rag-pdf/
 ├── src/
 │   ├── agents/              # 3 specialized agents
 │   │   ├── data_loader_agent.py    # PDF processing & storage
@@ -1238,7 +1069,7 @@ poetry run python main.py test                # ✅ System integration
 
 #### File Structure (45 files total)
 ```
-Nexus/
+atomic-rag-pdf/
 ├── src/                    # 30 Python files (simplified)
 │   ├── agents/            # 3 agent implementations
 │   ├── tools/             # 6 tool implementations  
