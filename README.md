@@ -33,19 +33,11 @@
 
 ## 🌍 Multilingual Support
 
-The system supports queries in multiple languages:
+The system supports queries in multiple languages with automatic translation:
 
 - **PDF Content**: All PDFs are processed in English
 - **User Queries**: Can be asked in any language (German, English, French, Spanish, etc.)
-- **Translation**: Queries are automatically translated to English for search, then results are translated back to the original language
-- **Answer Generation**: Answers are generated in English and translated to the user's language
-
-### Translation Features
-
-- **Automatic Language Detection**: Detects the language of user queries
-- **Query Translation**: Translates non-English queries to English for optimal search
-- **Result Translation**: Translates search results back to the original language
-- **Answer Translation**: Translates final answers to the user's language
+- **Translation Pipeline**: Queries are automatically translated to English for search, then results are translated back to the original language
 - **Fallback Handling**: If translation fails, falls back to English
 
 ### Example Multilingual Queries
@@ -74,23 +66,10 @@ The system uses **Mistral OCR Latest** (`mistral-ocr-latest`) for optimal Englis
 - **✅ Table Support**: Excellent table and structured data extraction
 - **✅ Direct PDF Processing**: Processes PDFs directly without conversion
 
-### OCR Model Comparison:
+### OCR Model Options:
 - **Recommended**: `mistral-ocr-latest` - Best for English PDFs
 - **Alternative**: `mistral-ocr-2505` - Specific version
 - **Legacy**: `mistral-ocr-2503` - Older version
-
-### Technical Implementation:
-- **Mistral OCR API**: Uses `client.ocr.process()` with dedicated OCR models
-- **Base64 Encoding**: Converts PDFs to base64 for API transmission
-- **Page-by-Page Processing**: Processes each PDF page individually for optimal accuracy
-- **Markdown Output**: Returns structured markdown with preserved formatting
-- **Error Handling**: Robust error handling for failed pages or API issues
-
-### Testing OCR Models:
-```bash
-# Test different OCR models
-poetry run python test_basic.py
-```
 
 ## 🚀 Quick Start (< 15 minutes)
 
@@ -132,9 +111,6 @@ poetry install
 # 3. Configure environment variables
 # Ensure MISTRAL_API_KEY is set in your system environment
 
-# The setup script will create .env with other settings
-# No need to manually edit .env for API keys
-
 # 4. Initialize databases
 poetry run init-db
 
@@ -148,69 +124,58 @@ poetry run python main.py search "Welche Leuchten sind gut für Operationssaal?"
 poetry run python main.py test
 ```
 
+## 🔧 Environment Configuration
 
-## 🎯 Poetry Dependency Management
+### Required Environment Variables
 
-This project uses Poetry for dependency management, providing:
-
-- **Reproducible builds** with lock files
-- **Virtual environment management** 
-- **Dependency resolution** with conflict detection
-- **Easy development setup** with dev dependencies
-- **Script management** for common tasks
-
-### Poetry Commands
-
+#### System Environment (Required)
 ```bash
-# Install all dependencies
-poetry install
-
-# Add a new dependency
-poetry add package-name
-
-# Add a development dependency
-poetry add --group dev package-name
-
-# Update dependencies
-poetry update
-
-# Show dependency tree
-poetry show --tree
-
-# Run commands in Poetry environment
-poetry run python script.py
-poetry run pytest
-poetry run black src/
-
-# Activate Poetry shell
-poetry shell
-
-# Export requirements.txt (if needed)
-poetry export -f requirements.txt --output requirements.txt
+# Set in your shell profile (~/.bashrc, ~/.zshrc, etc.)
+export MISTRAL_API_KEY="your_mistral_api_key_here"
 ```
 
-### Development Workflow
+#### Optional System Environment
+```bash
+# Alternative LLM (if needed)
+export OPENAI_API_KEY="your_openai_api_key_here"
+```
+
+### Quick Setup
+
+#### 1. Set API Key
+```bash
+# Add to your shell profile
+echo 'export MISTRAL_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### 2. Run Setup Script
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+#### 3. Verify Configuration
+```bash
+# Test basic functionality
+poetry run python test_basic.py
+```
+
+### Configuration Validation
 
 ```bash
-# 1. Install dependencies
-poetry install
+# Verify API key is set
+echo $MISTRAL_API_KEY
 
-# 2. Activate environment
-poetry shell
-
-# 3. Run tests
-poetry run pytest tests/ -v
-
-# 4. Format code
-poetry run black src/
-poetry run isort src/
-
-# 5. Type checking
-poetry run mypy src/
-
-# 6. Linting
-poetry run flake8 src/
-poetry run pylint src/
+# Check configuration loading
+poetry run python -c "
+from src.config.settings import settings
+print('✅ Configuration loaded successfully')
+print(f'SQLite: {settings.sqlite_path}')
+print(f'Qdrant: {settings.qdrant_path}')
+print(f'OCR Model: {settings.ocr_model}')
+print(f'LLM Model: {settings.llm_model}')
+"
 ```
 
 ## Usage
@@ -254,7 +219,6 @@ poetry run python main.py search "Quelle est la température de couleur de SIRIU
 
 # Run test queries (validates system functionality)
 poetry run python main.py test
-
 ```
 
 ### 🐳 Docker Deployment
@@ -306,38 +270,41 @@ poetry run python main.py load                    # Process all 152 PDFs
 - ✅ **Duplicate Prevention**: Skips already processed files
 - ✅ **Memory Efficient**: Processes files one at a time
 
-### 🔍 Search Commands
+## 🧪 Testing
+
+### Test Suite Status: ✅ All Tests Passing
 
 ```bash
-# Search for information (multilingual support)
-poetry run python main.py search "Was ist die Farbtemperatur von SIRIUS HRI 330W?"  # German
-poetry run python main.py search "What is the color temperature of SIRIUS HRI 330W?"  # English
-poetry run python main.py search "Quelle est la température de couleur de SIRIUS HRI 330W?"  # French
-poetry run python main.py search "¿Cuál es la temperatura de color de SIRIUS HRI 330W?"  # Spanish
-
-# Run test queries (validates system functionality)
-poetry run python main.py test
-```
-
-### 🗄️ Database Management
-
-```bash
-# Database management
-poetry run init-db  # Initialize SQLite and Qdrant databases
-
-# Testing and development
-poetry run pytest tests/ -v  # Run test suite
-poetry run pytest tests/ --cov=src --cov-report=html  # Run with coverage
-poetry run python test_basic.py  # Test basic functionality
-
-# Get help
-poetry run python main.py --help
-poetry run python main.py load --help
-poetry run python main.py search --help
+# Run all tests
+poetry run pytest tests/ -v
 
 # Run with coverage
 poetry run pytest tests/ --cov=src --cov-report=html
+
+# Run specific test categories
+poetry run pytest tests/test_data_loader.py -v
+poetry run pytest tests/test_research_agent.py -v
+poetry run pytest tests/test_qa_agent.py -v
+poetry run pytest tests/test_integration.py -v
 ```
+
+### Quick Functionality Tests
+
+```bash
+# Basic functionality test (no dependencies)
+poetry run python test_basic.py
+
+# Full system test (validates all test queries)
+poetry run python main.py test
+```
+
+### Test Coverage
+
+- **Unit Tests**: Individual components and tools
+- **Integration Tests**: Agent interactions and workflows
+- **End-to-End Tests**: Complete pipeline from PDF to answer
+- **Multilingual Tests**: Translation and language detection
+- **OCR Tests**: PDF processing and text extraction
 
 ### Test Queries
 
@@ -349,22 +316,6 @@ The system is designed to handle these specific test queries (all working):
 4. **Product Number**: "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?"
 
 **✅ All test queries are working** - Run `poetry run python main.py test` to verify.
-
-### Multilingual Test Examples
-
-```bash
-# German queries
-poetry run python main.py search "Was ist die Farbtemperatur von SIRIUS HRI 330W?"
-poetry run python main.py search "Welche Leuchten sind gut für Operationssaal?"
-
-# English queries
-poetry run python main.py search "What is the color temperature of SIRIUS HRI 330W?"
-poetry run python main.py search "Which lights are suitable for operating room?"
-
-# French queries
-poetry run python main.py search "Quelle est la température de couleur de SIRIUS HRI 330W?"
-poetry run python main.py search "Quelles lumières conviennent à la salle d'opération?"
-```
 
 ## Architecture
 
@@ -421,71 +372,6 @@ poetry run python main.py search "Quelles lumières conviennent à la salle d'op
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## 🧪 Testing
-
-### Test Suite Status: ✅ All Tests Passing
-
-```bash
-# Run all tests
-poetry run pytest tests/ -v
-
-# Run with coverage
-poetry run pytest tests/ --cov=src --cov-report=html
-
-# Run specific test categories
-poetry run pytest tests/test_data_loader.py -v
-poetry run pytest tests/test_research_agent.py -v
-poetry run pytest tests/test_qa_agent.py -v
-poetry run pytest tests/test_integration.py -v
-```
-
-### Quick Functionality Tests
-
-```bash
-# Basic functionality test (no dependencies)
-poetry run python test_basic.py
-
-# Full system test (validates all test queries)
-poetry run python main.py test
-```
-
-### Test Coverage
-
-- **Unit Tests**: Individual components and tools
-- **Integration Tests**: Agent interactions and workflows
-- **End-to-End Tests**: Complete pipeline from PDF to answer
-- **Multilingual Tests**: Translation and language detection
-- **OCR Tests**: PDF processing and text extraction
-
-## 🎯 Current System Status
-
-### ✅ Production Ready Features
-
-- **✅ All Test Queries Working**: All 4 required test queries pass successfully
-- **✅ Multilingual Support**: German, English, French, Spanish queries supported
-- **✅ OCR Processing**: Mistral OCR Latest with dedicated API endpoint
-- **✅ Database Integration**: SQLite + Qdrant fully initialized and working
-- **✅ CPU-Only Processing**: No GPU requirements, optimized for CPU
-- **✅ Poetry Management**: Reproducible builds and dependency management
-- **✅ Error Handling**: Graceful fallbacks and comprehensive error recovery
-- **✅ Testing Suite**: Complete test coverage with all tests passing
-
-### 📊 Performance Metrics
-
-- **PDF Processing**: ~1-2 minutes per PDF (Mistral OCR)
-- **Search Response**: < 30 seconds for complex queries
-- **Memory Usage**: Moderate (CPU-only embedding model)
-- **Storage**: ~50-100MB per 100 PDFs
-- **Concurrent Access**: Singleton pattern prevents Qdrant locking issues
-
-### 🚀 Ready for Production
-
-The system is fully functional and ready for:
-- **PDF Document Processing**: 100+ PDFs ready in `./data/pdfs/`
-- **Multilingual Queries**: Automatic translation and response
-- **Scalable Architecture**: Designed for 10,000+ PDFs
-- **Production Deployment**: Chat-like environment ready
-
 ## 📈 Scalability Analysis for 10,000+ PDFs
 
 ### Current Architecture Status ✅
@@ -502,19 +388,6 @@ The current implementation is **production-ready** and designed with scalability
 - ✅ Singleton pattern prevents concurrent access issues
 - ✅ Modular architecture for easy cloud migration
 - ✅ Optimized vector operations
-
-```python
-# Current implementation already handles concurrency
-class QdrantStorageTool(BaseTool):
-    _instances = {}  # Singleton pattern for thread safety
-    
-    def __new__(cls, config):
-        # Prevents multiple instances accessing same storage
-        key = f"{config.qdrant_path}:{config.collection_name}"
-        if key in cls._instances:
-            return cls._instances[key]
-        # ... rest of implementation
-```
 
 #### 2. Database Optimization ✅
 
@@ -544,22 +417,6 @@ class QdrantStorageTool(BaseTool):
 - Add vector compression for storage optimization
 - Use multiple collections for document types
 
-```python
-# Batch processing implementation
-def batch_process_pdfs(pdf_directory, batch_size=100):
-    pdf_files = list(Path(pdf_directory).glob("*.pdf"))
-    
-    for i in range(0, len(pdf_files), batch_size):
-        batch = pdf_files[i:i + batch_size]
-        
-        # Process batch in parallel
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            results = list(executor.map(process_single_pdf, batch))
-        
-        # Batch index embeddings
-        batch_index_embeddings(results)
-```
-
 #### 2. Database Optimization
 
 **For 10,000+ PDFs**:
@@ -567,7 +424,6 @@ def batch_process_pdfs(pdf_directory, batch_size=100):
 - Implement database sharding for large datasets
 - Use connection pooling for concurrent access
 - Add query result caching
-
 
 #### 3. Processing Pipeline Enhancement
 
@@ -626,210 +482,6 @@ def batch_process_pdfs(pdf_directory, batch_size=100):
 - Implement async processing
 - Add horizontal scaling
 - Implement microservices architecture
-
-### Conclusion
-
-The current system is **already scalable** and production-ready. The architecture is designed to handle large-scale deployments with minimal modifications. The modular design allows for incremental scaling improvements as needed.
-
-**Key Advantages**:
-- ✅ CPU-only processing (no GPU bottlenecks)
-- ✅ Cloud-based OCR service (Mistral API)
-- ✅ Efficient vector storage (Qdrant)
-- ✅ Hybrid database architecture
-- ✅ Modular agent design
-- ✅ Comprehensive error handling
-
-The system can be deployed immediately and scaled incrementally based on actual usage patterns and requirements.
-
-## 🔧 Environment Configuration
-
-### Environment Setup
-
-The Atomic RAG System uses environment variables for configuration. The Mistral API key should be set in your system environment, while other settings can be configured via `.env` file.
-
-### 🔑 Required Environment Variables
-
-#### System Environment (Required)
-```bash
-# Set in your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export MISTRAL_API_KEY="your_mistral_api_key_here"
-```
-
-#### Optional System Environment
-```bash
-# Alternative LLM (if needed)
-export OPENAI_API_KEY="your_openai_api_key_here"
-```
-
-### 📁 .env File Configuration
-
-The `.env` file contains application-specific settings. Create it by running:
-```bash
-# Copy the template (if available)
-cp .env.example .env
-
-# Or run the setup script
-./setup.sh
-```
-
-### 🚀 Quick Setup
-
-#### 1. Set API Key
-```bash
-# Add to your shell profile
-echo 'export MISTRAL_API_KEY="your_key_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-#### 2. Run Setup Script
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-#### 3. Verify Configuration
-```bash
-# Test basic functionality
-poetry run python test_basic.py
-
-```
-
-### 🔍 Configuration Validation
-
-#### Check Environment Variables
-```bash
-# Verify API key is set
-echo $MISTRAL_API_KEY
-
-# Check all environment variables
-poetry run python -c "
-from src.config.settings import settings
-print('✅ Configuration loaded successfully')
-print(f'SQLite: {settings.sqlite_path}')
-print(f'Qdrant: {settings.qdrant_path}')
-print(f'OCR Model: {settings.ocr_model}')
-print(f'LLM Model: {settings.llm_model}')
-"
-```
-
-#### Test Database Connection
-```bash
-# Initialize databases
-poetry run init-db
-
-# Check database status
-poetry run python -c "
-from src.tools.storage_tools import SQLiteStorageTool, SQLiteStorageToolConfig
-config = SQLiteStorageToolConfig(sqlite_path='./storage/products.db')
-tool = SQLiteStorageTool(config)
-info = tool.get_database_info()
-print('✅ SQLite database ready')
-print(f'Tables: {info[\"tables\"]}')
-"
-```
-
-### 🛠️ Customization Options
-
-#### Model Configuration
-- **OCR Model**: `mistral-ocr-latest` (recommended), `mistral-ocr-2505`, `mistral-ocr-2503`
-- **LLM Model**: `mistral-large-latest` (recommended), `mistral-medium-latest`
-- **Embedding Model**: `sentence-transformers/all-MiniLM-L6-v2` (CPU-only, English-optimized)
-
-#### Performance Tuning
-- **Chunk Size**: Increase for longer context (default: 500)
-- **Rerank Top K**: More results to rerank (default: 10)
-- **Final Top K**: Final results returned (default: 5)
-
-#### Language Settings
-- **Default Language**: `en` (English), `de` (German), `fr` (French), `es` (Spanish)
-- **Multilingual Support**: Automatic detection and translation
-
-### 🔧 Troubleshooting
-
-#### Common Issues
-
-1. **API Key Not Found**
-   ```bash
-   # Check if API key is set
-   echo $MISTRAL_API_KEY
-   
-   # If empty, set it
-   export MISTRAL_API_KEY="your_key_here"
-   ```
-
-2. **Database Connection Issues**
-   ```bash
-   # Reinitialize databases
-   poetry run init-db
-   
-   # Check permissions
-   ls -la storage/
-   ```
-
-3. **Model Loading Issues**
-   ```bash
-   # Test individual components
-   poetry run python test_basic.py
-   poetry run python test_basic.py
-   ```
-
-#### Environment Validation Script
-```bash
-#!/bin/bash
-# validate_env.sh
-
-echo "🔍 Validating Environment Configuration..."
-
-# Check API key
-if [ -z "$MISTRAL_API_KEY" ]; then
-    echo "❌ MISTRAL_API_KEY not set"
-    exit 1
-else
-    echo "✅ MISTRAL_API_KEY is set"
-fi
-
-# Check Poetry
-if ! command -v poetry &> /dev/null; then
-    echo "❌ Poetry not installed"
-    exit 1
-else
-    echo "✅ Poetry is installed"
-fi
-
-# Check .env file
-if [ ! -f .env ]; then
-    echo "❌ .env file not found"
-    exit 1
-else
-    echo "✅ .env file exists"
-fi
-
-# Test configuration loading
-poetry run python -c "
-from src.config.settings import settings
-print('✅ Configuration loaded successfully')
-" || exit 1
-
-echo "🎉 Environment validation complete!"
-```
-
-### 📋 Configuration Checklist
-
-- [ ] MISTRAL_API_KEY set in system environment
-- [ ] .env file created with correct settings
-- [ ] Poetry installed and dependencies installed
-- [ ] Databases initialized (`poetry run init-db`)
-- [ ] Basic tests passing (`poetry run python test_basic.py`)
-
-### 🎯 Production Deployment
-
-For production deployment:
-
-1. **Environment Variables**: Use system environment or container secrets
-2. **Database Paths**: Use absolute paths for reliability
-3. **Logging**: Set appropriate log levels
-4. **Security**: Never commit API keys to version control
-5. **Monitoring**: Enable detailed logging for production monitoring
 
 ## 📁 Project Structure
 
@@ -950,201 +602,15 @@ The Atomic RAG System is **production-ready** and fully functional with all requ
 - **Search Relevance**: High (cross-encoder reranking)
 - **Answer Quality**: High (fact-checking + citations)
 
-### 🔧 System Components Status
+### 🚀 Ready for Production
 
-#### ✅ Data Loader Agent
-- **Status**: Fully functional
-- **Features**: PDF → OCR → Structured Storage
-- **Tools**: MistralOCR, StructuredParser, SQLiteStorage, QdrantStorage, Embedding
-- **Performance**: Handles 100+ PDFs efficiently
+The system is fully functional and ready for:
+- **PDF Document Processing**: 100+ PDFs ready in `./data/pdfs/`
+- **Multilingual Queries**: Automatic translation and response
+- **Scalable Architecture**: Designed for 10,000+ PDFs
+- **Production Deployment**: Chat-like environment ready
 
-#### ✅ Research Agent
-- **Status**: Fully functional
-- **Features**: Query Classification, Hybrid Search, Reranking
-- **Tools**: Translation, QueryClassifier, SQLiteSearch, QdrantSearch, HybridSearch, Reranker
-- **Performance**: < 30 seconds response time
-
-#### ✅ Quality Assurance Agent
-- **Status**: Fully functional
-- **Features**: Answer Generation, Fact-checking, Citations, Validation
-- **Tools**: AnswerGenerator, FactChecker, Citation, Validation, Translation
-- **Performance**: High-quality answers with citations
-
-### 🧪 Testing Status
-
-#### ✅ Test Suite: All Tests Passing
-
-```bash
-# All test categories passing
-poetry run pytest tests/ -v                    # ✅ Unit tests
-poetry run python test_basic.py               # ✅ Basic functionality testing
-poetry run python main.py test                # ✅ System integration
-```
-
-#### ✅ Test Query Results
-
-1. **"Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?"** ✅
-2. **"Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?"** ✅
-3. **"Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden."** ✅
-4. **"Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?"** ✅
-
-### 🌍 Multilingual Support Status
-
-#### ✅ Language Support
-- **German**: Native support with translation
-- **English**: Native support (no translation needed)
-- **French**: Full translation support
-- **Spanish**: Full translation support
-- **Other Languages**: Automatic detection and translation
-
-#### ✅ Translation Pipeline
-- **Query Translation**: German → English for search
-- **Result Translation**: English → German for display
-- **Answer Translation**: English → German for final answer
-- **Fallback Handling**: Graceful fallback to English if translation fails
-
-### 📈 Scalability Status
-
-#### ✅ Current Scalability Features
-- **Vector Database**: Qdrant with efficient storage
-- **Database Architecture**: SQLite + Qdrant hybrid
-- **Processing Pipeline**: CPU-only, no GPU bottlenecks
-- **Modular Architecture**: Easy to scale individual components
-- **Singleton Pattern**: Prevents concurrent access issues
-
-#### ✅ Ready for 10,000+ PDFs
-- **Architecture**: Designed for large-scale processing
-- **Storage**: Efficient vector and relational storage
-- **Processing**: Scalable OCR and embedding pipeline
-- **Search**: Optimized query classification and retrieval
-
-### 🚀 Deployment Status
-
-#### ✅ Production Ready Features
-- **Automated Setup**: `./setup.sh` script
-- **Dependency Management**: Poetry with lock files
-- **Environment Configuration**: `.env` file support
-- **Database Initialization**: `poetry run init-db`
-- **Error Handling**: Comprehensive error recovery
-- **Logging**: Structured logging throughout
-
-#### ✅ Deployment Options
-- **Local Development**: Full local setup
-- **Docker**: Container-ready (Dockerfile can be added)
-- **Cloud**: Mistral API integration ready
-- **Scaling**: Horizontal scaling architecture
-
-## 📋 Project Summary
-
-### ✅ Completed Implementation
-
-#### 🚀 Recent Improvements (Latest Update)
-
-**Code Simplification & Refactoring:**
-- ✅ **Simplified Architecture**: Removed unnecessary complexity from base classes
-- ✅ **Batch Processing**: Added `--limit` option for selective PDF processing
-- ✅ **Cleaner Codebase**: Removed obsolete files and unused dependencies
-- ✅ **Better Performance**: Reduced overhead from simplified inheritance
-- ✅ **Maintained Functionality**: All features work exactly as before
-
-**New Batch Loading Features:**
-- ✅ **Selective Processing**: `poetry run python main.py load --limit 10`
-- ✅ **Progress Tracking**: Real-time processing updates
-- ✅ **Error Resilience**: Continues processing even if some files fail
-- ✅ **Memory Efficient**: Processes files one at a time
-
-**New Web Frontend (Streamlit):**
-- ✅ **Interactive Interface**: User-friendly web UI
-- ✅ **Batch Processing**: Visual PDF processing with progress bars
-- ✅ **Search Interface**: Natural language query input
-- ✅ **Test Queries**: Predefined test cases for validation
-- ✅ **System Monitoring**: Real-time status and statistics
-- ✅ **Results Visualization**: Formatted answers with confidence scores
-
-#### Core Architecture
-- **3-Agent Pipeline**: Data Loader → Research → Quality Assurance
-- **Hybrid Storage**: SQLite + Qdrant vector database
-- **Intelligent Search**: Query classification, semantic + exact search, reranking
-- **Quality Assurance**: Fact-checking, citations, confidence scoring
-
-#### File Structure (45 files total)
-```
-atomic-rag-pdf/
-├── src/                    # 30 Python files (simplified)
-│   ├── agents/            # 3 agent implementations
-│   ├── tools/             # 6 tool implementations  
-│   ├── schemas/           # 3 Pydantic models
-│   ├── config/            # Configuration management
-│   ├── lib/               # 2 simplified base classes
-│   └── utils/             # Database & embedding utilities
-├── tests/                 # 5 test files
-├── scripts/               # 2 utility scripts
-├── data/pdfs/             # PDF input directory (152 files ready)
-├── storage/               # Database storage
-├── main.py                # CLI entry point
-├── streamlit_app.py       # Web frontend (Streamlit)
-├── launch_streamlit.sh    # Streamlit launcher script
-├── Dockerfile             # Single-container Docker image
-├── docker-build.sh        # Docker build script
-├── docker-run.sh          # Docker run script (handles MISTRAL_API_KEY)
-├── .dockerignore          # Docker ignore file
-├── DOCKER.md              # Docker deployment guide
-├── pyproject.toml         # Poetry configuration
-└── README.md              # Complete documentation
-```
-
-#### Key Features Implemented
-
-1. **Data Loader Agent**
-   - Mistral OCR integration
-   - Structured data parsing
-   - SQLite + Qdrant storage
-   - Text chunking and embedding
-
-2. **Research Agent**
-   - Query classification (exact, filter, semantic, hybrid)
-   - Multi-strategy search
-   - Result reranking with cross-encoder
-
-3. **Quality Assurance Agent**
-   - LLM answer generation
-   - Fact-checking against sources
-   - Citation generation
-   - Answer validation
-
-#### Test Queries Support
-All 4 required test queries are implemented:
-1. ✅ "Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?"
-2. ✅ "Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?"
-3. ✅ "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden."
-4. ✅ "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?"
-
-#### CLI Interface
-```bash
-poetry run python main.py load                    # Load PDFs
-poetry run python main.py search "query"          # Search (multilingual)
-poetry run python main.py test                    # Run test queries
-poetry run pytest tests/                          # Run full test suite
-```
-
-#### Scalability Analysis
-Complete scalability analysis provided for 10,000+ PDFs including:
-- Database optimization strategies
-- Caching implementations
-- Infrastructure scaling
-- Performance estimates
-- Cost considerations
-
-### 🚀 Ready for Deployment
-
-The system is ready for deployment with:
-- Complete Poetry-based dependency management
-- Environment configuration
-- Database initialization scripts
-- Comprehensive test suite
-- Detailed documentation
-
-### 📋 Next Steps for Production
+## 📋 Next Steps for Production
 
 1. **Install Dependencies**: `poetry install`
 2. **Configure Environment**: Set `MISTRAL_API_KEY` in system environment
@@ -1152,18 +618,6 @@ The system is ready for deployment with:
 4. **Add PDF Documents**: Place PDFs in `./data/pdfs/` (100+ already available)
 5. **Process Documents**: `poetry run python main.py load --limit 10` (batch processing)
 6. **Test System**: `poetry run python main.py test`
-
-### 🎯 Requirements Fulfillment
-
-- ✅ **RAG Implementation**: Complete 3-agent pipeline
-- ✅ **PDF Processing**: Mistral OCR integration
-- ✅ **Hybrid Search**: SQLite + Qdrant
-- ✅ **Test Queries**: All 4 queries supported
-- ✅ **Scalability Analysis**: Detailed 10,000+ PDF strategy
-- ✅ **15-minute Setup**: Complete documentation
-- ✅ **No GPU Required**: CPU-only implementation
-- ✅ **Chat-ready**: Sub-minute response times
-- ✅ **Developer Friendly**: Poetry + comprehensive tests
 
 ## 🎉 Conclusion
 
