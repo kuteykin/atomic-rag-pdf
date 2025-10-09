@@ -61,7 +61,7 @@ class DataLoaderAgent(BaseAgent):
 
         # Step 2: Parse structured data
         print(f"🔍 Parsing structured data...")
-        parsed_products = self.parser_tool.run(ocr_result["text"])
+        parsed_products = self.parser_tool.run(ocr_result["text"], pdf_path)
 
         # Step 3: Store in SQLite (using upsert to handle duplicates)
         sqlite_ids = []

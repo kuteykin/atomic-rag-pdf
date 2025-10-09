@@ -28,31 +28,63 @@ class StructuredParserTool(BaseTool):
         """Initialize regex patterns for data extraction"""
         self.patterns = {
             "sku": [
+                # English patterns (prioritized)
                 r"SKU[:\s]+([A-Z0-9\-/]+)",
+                r"Product[:\s]+Code[:\s]+([A-Z0-9\-/]+)",
+                r"Item[:\s]+Number[:\s]+([A-Z0-9\-/]+)",
+                r"Part[:\s]+Number[:\s]+([A-Z0-9\-/]+)",
+                r"Model[:\s]+Number[:\s]+([A-Z0-9\-/]+)",
+                r"Product[:\s]+ID[:\s]+([A-Z0-9\-/]+)",
+                r"Code[:\s]+([A-Z0-9\-/]+)",
+                r"ZMP[_\s]*(\d+)",  # ZMP product codes
+                r"^#\s*(\d+)\s*W",  # Product codes at start of line
+                # German patterns (fallback)
                 r"Artikel[:\s]+([A-Z0-9\-/]+)",
                 r"Produktcode[:\s]+([A-Z0-9\-/]+)",
                 r"Art\.-Nr\.?[:\s]+([A-Z0-9\-/]+)",
             ],
             "primary_product_number": [
+                # English patterns (prioritized)
+                r"Primary[:\s]+Product[:\s]+Number[:\s]+(\d+)",
+                r"Product[:\s]+Number[:\s]+(\d+)",
+                r"Main[:\s]+Number[:\s]+(\d+)",
+                # German patterns (fallback)
                 r"primäre\s+Erzeugnisnummer[:\s]+(\d+)",
                 r"Erzeugnisnummer[:\s]+(\d+)",
                 r"Produktnummer[:\s]+(\d+)",
             ],
             "watt": [
-                r"(\d+)\s*W(?:att)?",
-                r"(\d+)\s*W",
-                r"Leistung[:\s]+(\d+)\s*W",
+                # English patterns (prioritized)
+                r"(\d{1,4})\s*W(?:att)?\b",
+                r"Power[:\s]+(\d{1,4})\s*W",
+                r"Wattage[:\s]+(\d{1,4})\s*W",
+                r"(\d{1,4})\s*W\b",
+                # German patterns (fallback)
+                r"Leistung[:\s]+(\d{1,4})\s*W",
             ],
             "voltage": [
-                r"(\d+(?:\.\d+)?)\s*V(?:olt)?",
+                # English patterns (prioritized)
+                r"(\d+(?:\.\d+)?)\s*V(?:olt)?\b",
+                r"Voltage[:\s]+(\d+(?:\.\d+)?)\s*V",
+                r"Operating[:\s]+Voltage[:\s]+(\d+(?:\.\d+)?)\s*V",
+                # German patterns (fallback)
                 r"Spannung[:\s]+(\d+(?:\.\d+)?)\s*V",
             ],
             "current": [
-                r"(\d+(?:\.\d+)?)\s*A(?:mpere)?",
+                # English patterns (prioritized)
+                r"(\d+(?:\.\d+)?)\s*A(?:mpere)?\b",
+                r"Current[:\s]+(\d+(?:\.\d+)?)\s*A",
+                r"Amperage[:\s]+(\d+(?:\.\d+)?)\s*A",
+                # German patterns (fallback)
                 r"Strom[:\s]+(\d+(?:\.\d+)?)\s*A",
             ],
             "color_temperature": [
-                r"(\d+)\s*K",
+                # English patterns (prioritized)
+                r"(\d+)\s*K(?:elvin)?\b",
+                r"Color[:\s]+Temperature[:\s]+(\d+)\s*K",
+                r"Temperature[:\s]+(\d+)\s*K",
+                r"CCT[:\s]+(\d+)\s*K",
+                # German patterns (fallback)
                 r"Farbtemperatur[:\s]+(\d+)\s*K",
                 r"(\d+)\s*Kelvin",
             ],
@@ -62,19 +94,34 @@ class StructuredParserTool(BaseTool):
                 r"Ra[:\s]+(\d+)",
             ],
             "luminous_flux": [
-                r"(\d+)\s*Lumen",
+                # English patterns (prioritized)
+                r"(\d+)\s*Lumen\b",
+                r"Luminous[:\s]+Flux[:\s]+(\d+)\s*Lumen",
+                r"Light[:\s]+Output[:\s]+(\d+)\s*Lumen",
+                r"(\d+)\s*lm\b",
+                # German patterns (fallback)
                 r"Lichtstrom[:\s]+(\d+)\s*Lumen",
-                r"(\d+)\s*lm",
             ],
             "beam_angle": [
-                r"(\d+(?:°|Grad))",
+                # English patterns (prioritized)
+                r"(\d+(?:°|Grad))\b",
+                r"Beam[:\s]+Angle[:\s]+(\d+(?:°|Grad))",
+                r"Light[:\s]+Distribution[:\s]+(\d+(?:°|Grad))",
+                r"Spread[:\s]+(\d+(?:°|Grad))",
+                # German patterns (fallback)
                 r"Abstrahlwinkel[:\s]+(\d+(?:°|Grad))",
                 r"Öffnungswinkel[:\s]+(\d+(?:°|Grad))",
             ],
             "lebensdauer_stunden": [
+                # English patterns (prioritized)
+                r"(\d+)\s*Hours\b",
+                r"Lifetime[:\s]+(\d+)\s*Hours",
+                r"Service[:\s]+Life[:\s]+(\d+)\s*Hours",
+                r"Operating[:\s]+Life[:\s]+(\d+)\s*Hours",
+                r"(\d+)\s*h\b",
+                # German patterns (fallback)
                 r"(\d+)\s*Stunden",
                 r"Lebensdauer[:\s]+(\d+)\s*Stunden",
-                r"(\d+)\s*h",
                 r"Betriebsdauer[:\s]+(\d+)\s*Stunden",
             ],
             "operating_temperature": [
@@ -100,7 +147,7 @@ class StructuredParserTool(BaseTool):
             ],
         }
 
-    def run(self, text: str) -> List[ProductSpecification]:
+    def run(self, text: str, source_pdf: str = "unknown.pdf") -> List[ProductSpecification]:
         """Parse text and extract product specifications"""
         try:
             # Split text into potential product sections
@@ -108,7 +155,7 @@ class StructuredParserTool(BaseTool):
 
             parsed_products = []
             for i, product_text in enumerate(products):
-                product_data = self._extract_product_data(product_text, i)
+                product_data = self._extract_product_data(product_text, i, source_pdf)
                 if product_data:
                     parsed_products.append(product_data)
 
@@ -149,14 +196,23 @@ class StructuredParserTool(BaseTool):
         # If no separators found, treat entire text as one product
         return [text.strip()]
 
-    def _extract_product_data(self, text: str, index: int) -> ProductSpecification:
+    def _extract_product_data(
+        self, text: str, index: int, source_pdf: str = "unknown.pdf"
+    ) -> ProductSpecification:
         """Extract product data from a text section"""
         try:
             data = {}
 
             # Extract basic information
             data["product_name"] = self._extract_product_name(text)
-            data["sku"] = self._extract_field(text, "sku") or f"UNKNOWN_{index}"
+
+            # Try to extract SKU with improved logic
+            sku = self._extract_field(text, "sku")
+            if not sku or sku in ["describes", "unknown", "n/a"]:
+                # Fallback: try to extract from filename or first line
+                sku = self._extract_sku_fallback(text, source_pdf, index)
+
+            data["sku"] = sku
             data["primary_product_number"] = self._extract_field(text, "primary_product_number")
 
             # Extract technical specifications
@@ -188,15 +244,54 @@ class StructuredParserTool(BaseTool):
             data["certifications"] = self._extract_certifications(text)
             data["ip_rating"] = self._extract_field(text, "ip_rating")
 
-            # Set full description
+            # Set full description and source
             data["full_description"] = text
-            data["source_pdf"] = "unknown.pdf"  # Will be set by caller
+            data["source_pdf"] = source_pdf  # Will be set by caller
 
             return ProductSpecification(**data)
 
         except Exception as e:
             logger.error(f"Error extracting product data: {e}")
             return None
+
+    def _extract_sku_fallback(self, text: str, source_pdf: str, index: int) -> str:
+        """Fallback method to extract SKU when normal patterns fail"""
+        import re
+        import os
+
+        # Try to extract from filename first
+        if source_pdf and source_pdf != "unknown.pdf":
+            filename = os.path.basename(source_pdf)
+            # Extract ZMP codes from filename
+            zmp_match = re.search(r"ZMP[_\s]*(\d+)", filename)
+            if zmp_match:
+                return f"ZMP_{zmp_match.group(1)}"
+
+            # Extract any alphanumeric code from filename
+            code_match = re.search(r"([A-Z0-9]+)", filename)
+            if code_match:
+                return code_match.group(1)
+
+        # Try to extract from first line of text
+        first_line = text.split("\n")[0].strip()
+
+        # Look for product codes at start of line
+        start_match = re.search(r"^#\s*(\d+)", first_line)
+        if start_match:
+            return start_match.group(1)
+
+        # Look for any 7+ digit number (likely product code)
+        long_number = re.search(r"\b(\d{7,})\b", first_line)
+        if long_number:
+            return long_number.group(1)
+
+        # Look for ZMP codes in text
+        zmp_text_match = re.search(r"ZMP[_\s]*(\d+)", text)
+        if zmp_text_match:
+            return f"ZMP_{zmp_text_match.group(1)}"
+
+        # Final fallback
+        return f"UNKNOWN_{index}"
 
     def _extract_product_name(self, text: str) -> str:
         """Extract product name from text"""
