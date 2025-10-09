@@ -63,10 +63,10 @@ class DataLoaderAgent(BaseAgent):
         print(f"🔍 Parsing structured data...")
         parsed_products = self.parser_tool.run(ocr_result["text"])
 
-        # Step 3: Store in SQLite
+        # Step 3: Store in SQLite (using upsert to handle duplicates)
         sqlite_ids = []
         for product in parsed_products:
-            product_id = self.sqlite_tool.insert_product(product)
+            product_id = self.sqlite_tool.upsert_product(product)
             sqlite_ids.append(product_id)
 
         # Step 4: Generate embeddings and store in Qdrant

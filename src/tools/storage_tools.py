@@ -39,6 +39,17 @@ class SQLiteStorageTool(BaseTool):
             logger.error(f"Error inserting product: {e}")
             raise
 
+    def upsert_product(self, product: ProductSpecification) -> int:
+        """Insert or update a product and return the ID"""
+        try:
+            product_dict = product.dict()
+            product_id = self.db_manager.upsert_product(product_dict)
+            logger.info(f"Upserted product {product.sku} with ID {product_id}")
+            return product_id
+        except Exception as e:
+            logger.error(f"Error upserting product: {e}")
+            raise
+
     def search_exact(self, query: str) -> List[Dict[str, Any]]:
         """Search for exact matches"""
         return self.db_manager.search_exact(query)

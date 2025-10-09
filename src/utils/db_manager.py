@@ -114,6 +114,97 @@ class DatabaseManager:
             conn.commit()
             return product_id
 
+    def upsert_product(self, product_data: Dict[str, Any]) -> int:
+        """Insert or update a product based on SKU and return the ID"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            # Convert lists to JSON strings
+            suitable_for = str(product_data.get("suitable_for", []))
+            certifications = str(product_data.get("certifications", []))
+
+            # First try to get existing product by SKU
+            cursor.execute("SELECT id FROM products WHERE sku = ?", (product_data.get("sku"),))
+            existing = cursor.fetchone()
+
+            if existing:
+                # Update existing product
+                product_id = existing[0]
+                cursor.execute(
+                    """
+                    UPDATE products SET
+                        product_name = ?, primary_product_number = ?, watt = ?, voltage = ?, current = ?,
+                        color_temperature = ?, color_rendering_index = ?, luminous_flux = ?, beam_angle = ?,
+                        lebensdauer_stunden = ?, operating_temperature = ?, dimensions = ?, weight = ?,
+                        application_area = ?, suitable_for = ?, certifications = ?, ip_rating = ?,
+                        full_description = ?, source_pdf = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE sku = ?
+                """,
+                    (
+                        product_data.get("product_name"),
+                        product_data.get("primary_product_number"),
+                        product_data.get("watt"),
+                        product_data.get("voltage"),
+                        product_data.get("current"),
+                        product_data.get("color_temperature"),
+                        product_data.get("color_rendering_index"),
+                        product_data.get("luminous_flux"),
+                        product_data.get("beam_angle"),
+                        product_data.get("lebensdauer_stunden"),
+                        product_data.get("operating_temperature"),
+                        product_data.get("dimensions"),
+                        product_data.get("weight"),
+                        product_data.get("application_area"),
+                        suitable_for,
+                        certifications,
+                        product_data.get("ip_rating"),
+                        product_data.get("full_description"),
+                        product_data.get("source_pdf"),
+                        product_data.get("sku"),
+                    ),
+                )
+                logger.info(f"Updated existing product with SKU: {product_data.get('sku')}")
+            else:
+                # Insert new product
+                cursor.execute(
+                    """
+                    INSERT INTO products (
+                        product_name, sku, primary_product_number, watt, voltage, current,
+                        color_temperature, color_rendering_index, luminous_flux, beam_angle,
+                        lebensdauer_stunden, operating_temperature, dimensions, weight,
+                        application_area, suitable_for, certifications, ip_rating,
+                        full_description, source_pdf
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        product_data.get("product_name"),
+                        product_data.get("sku"),
+                        product_data.get("primary_product_number"),
+                        product_data.get("watt"),
+                        product_data.get("voltage"),
+                        product_data.get("current"),
+                        product_data.get("color_temperature"),
+                        product_data.get("color_rendering_index"),
+                        product_data.get("luminous_flux"),
+                        product_data.get("beam_angle"),
+                        product_data.get("lebensdauer_stunden"),
+                        product_data.get("operating_temperature"),
+                        product_data.get("dimensions"),
+                        product_data.get("weight"),
+                        product_data.get("application_area"),
+                        suitable_for,
+                        certifications,
+                        product_data.get("ip_rating"),
+                        product_data.get("full_description"),
+                        product_data.get("source_pdf"),
+                    ),
+                )
+                product_id = cursor.lastrowid
+                logger.info(f"Inserted new product with SKU: {product_data.get('sku')}")
+
+            conn.commit()
+            return product_id
+
     def search_exact(self, query: str) -> List[Dict[str, Any]]:
         """Search for exact matches"""
         with sqlite3.connect(self.db_path) as conn:
