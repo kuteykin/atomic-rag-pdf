@@ -21,6 +21,7 @@ from src.agents.data_loader_agent import DataLoaderAgent, DataLoaderAgentConfig
 from src.agents.research_agent import ResearchAgent, ResearchAgentConfig
 from src.agents.qa_agent import QualityAssuranceAgent, QAAgentConfig
 from src.config.settings import settings
+from src.utils.model_info import get_actual_model_info, get_model_status, get_model_capabilities
 
 # Page configuration
 st.set_page_config(
@@ -404,12 +405,51 @@ def main():
 
         with col2:
             st.markdown("**Model Configuration:**")
-            st.write(f"• LLM Model: `{settings.llm_model}`")
-            st.write(f"• OCR Model: `{settings.ocr_model}`")
-            st.write(f"• Embedding Model: `{settings.embedding_model}`")
+
+            # Get actual model information
+            model_info = get_actual_model_info()
+            model_status = get_model_status()
+
+            # Display each model with status
+            for model_type, info in model_info.items():
+                status_icon = model_status.get(model_type, "❓")
+                st.write(f"• **{model_type.upper()}**: {status_icon}")
+                st.write(f"  - Model: `{info['actual']}`")
+                st.write(f"  - Provider: {info.get('provider', 'Unknown')}")
+                if model_type == "embedding" and "dimension" in info:
+                    st.write(f"  - Dimension: {info['dimension']}")
+                st.write(f"  - Description: {info['description']}")
+                st.write("")
+
+        # Model capabilities
+        st.markdown("### 🧠 Model Capabilities")
+
+        model_capabilities = get_model_capabilities()
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**Supported Languages:**")
+            for lang in model_capabilities["languages_supported"]:
+                st.write(f"• {lang}")
+
+            st.markdown("**PDF Formats:**")
+            for fmt in model_capabilities["pdf_formats"]:
+                st.write(f"• {fmt}")
+
+        with col2:
+            st.markdown("**Search Types:**")
+            for search_type in model_capabilities["search_types"]:
+                st.write(f"• {search_type}")
+
+            st.markdown("**Performance:**")
+            perf = model_capabilities["performance"]
+            st.write(f"• Embedding Dimension: {perf['embedding_dimension']}")
+            st.write(f"• Rerank Top-K: {perf['rerank_top_k']}")
+            st.write(f"• Final Top-K: {perf['final_top_k']}")
 
         # System capabilities
-        st.markdown("### 🚀 Capabilities")
+        st.markdown("### 🚀 System Capabilities")
 
         capabilities = [
             "✅ Multi-agent RAG pipeline",
