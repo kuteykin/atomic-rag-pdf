@@ -25,8 +25,6 @@ class ResearchAgent(BaseAgent):
 
     def __init__(self, config: ResearchAgentConfig):
         from src.tools.search_tools import (
-            QueryClassifierTool,
-            QueryClassifierToolConfig,
             SQLiteSearchTool,
             SQLiteSearchToolConfig,
             QdrantSearchTool,
@@ -34,12 +32,15 @@ class ResearchAgent(BaseAgent):
             HybridSearchTool,
             HybridSearchToolConfig,
         )
+        from src.tools.llm_query_classifier import LLMQueryClassifier, LLMQueryClassifierConfig
         from src.tools.reranker_tools import RerankerTool, RerankerToolConfig
         from src.tools.translation_tools import TranslationTool, TranslationToolConfig
         from src.config.settings import settings
 
         # Initialize tools
-        self.classifier_tool = QueryClassifierTool(QueryClassifierToolConfig())
+        self.classifier_tool = LLMQueryClassifier(
+            LLMQueryClassifierConfig(api_key=settings.mistral_api_key, model=settings.llm_model)
+        )
         self.sqlite_tool = SQLiteSearchTool(SQLiteSearchToolConfig(db_path=config.sqlite_path))
         self.qdrant_tool = QdrantSearchTool(QdrantSearchToolConfig(qdrant_path=config.qdrant_path))
         self.hybrid_tool = HybridSearchTool(
@@ -78,8 +79,11 @@ class ResearchAgent(BaseAgent):
 
         elif query_type == "ATTRIBUTE_FILTER":
             # e.g., "≥1000W und >400h"
-            filters = classification.filters or {}
-            results = self.sqlite_tool.filter_search(filters)
+            filters = classification.filters
+            if filters:
+                results = self.sqlite_tool.filter_search(filters)
+            else:
+                results = []
 
         elif query_type == "SEMANTIC":
             # e.g., "gut für Operationssaal"
@@ -89,9 +93,10 @@ class ResearchAgent(BaseAgent):
 
         elif query_type == "HYBRID":
             # e.g., "energy-efficient Leuchtmittel >1000W"
+            filters = classification.filters
             results = self.hybrid_tool.hybrid_search(
                 query=english_query,
-                filters=classification.filters or {},
+                filters=filters,
                 top_k=self.config.rerank_top_k,
             )
 
