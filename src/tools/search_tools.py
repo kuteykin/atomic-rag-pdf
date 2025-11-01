@@ -16,6 +16,7 @@ from src.tools.storage_tools import (
     QdrantStorageToolConfig,
     EmbeddingToolConfig,
 )
+from src.config.constants import DEFAULT_SQLITE_PATH, DEFAULT_QDRANT_PATH, DEFAULT_COLLECTION_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class SQLiteSearchToolConfig(BaseToolConfig):
     """Configuration for SQLite search tool"""
 
-    db_path: str = Field(default="./storage/products.db")
+    db_path: str = Field(default=DEFAULT_SQLITE_PATH)
 
 
 class SQLiteSearchTool(BaseTool):
@@ -53,8 +54,8 @@ class SQLiteSearchTool(BaseTool):
 class QdrantSearchToolConfig(BaseToolConfig):
     """Configuration for Qdrant search tool"""
 
-    qdrant_path: str = Field(default="./storage/qdrant_storage")
-    collection_name: str = Field(default="products")
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH)
+    collection_name: str = Field(default=DEFAULT_COLLECTION_NAME)
 
 
 class QdrantSearchTool(BaseTool):
@@ -109,9 +110,9 @@ class QdrantSearchTool(BaseTool):
 class HybridSearchToolConfig(BaseToolConfig):
     """Configuration for hybrid search tool"""
 
-    sqlite_path: str = Field(default="./storage/products.db")
-    qdrant_path: str = Field(default="./storage/qdrant_storage")
-    collection_name: str = Field(default="products")
+    sqlite_path: str = Field(default=DEFAULT_SQLITE_PATH)
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH)
+    collection_name: str = Field(default=DEFAULT_COLLECTION_NAME)
 
 
 class HybridSearchTool(BaseTool):

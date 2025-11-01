@@ -2,14 +2,19 @@
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
 from pydantic import Field
+from src.config.constants import (
+    DEFAULT_LLM_MODEL,
+    DEFAULT_QA_LANGUAGE,
+    DEFAULT_MAX_ANSWER_LENGTH,
+)
 
 
 class QAAgentConfig(BaseAgentConfig):
     """Configuration for QA Agent"""
 
-    llm_model: str = Field(default="mistral-large-latest")
-    language: str = Field(default="German")
-    max_answer_length: int = Field(default=500)
+    llm_model: str = Field(default=DEFAULT_LLM_MODEL)
+    language: str = Field(default=DEFAULT_QA_LANGUAGE)
+    max_answer_length: int = Field(default=DEFAULT_MAX_ANSWER_LENGTH)
 
 
 class QualityAssuranceAgent(BaseAgent):

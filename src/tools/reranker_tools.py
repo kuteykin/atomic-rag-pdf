@@ -3,11 +3,12 @@
 from src.lib.base_tool import BaseTool, BaseToolConfig
 from sentence_transformers import CrossEncoder
 from pydantic import Field
+from src.config.constants import DEFAULT_RERANK_MODEL
 
 
 class RerankerToolConfig(BaseToolConfig):
     model_name: str = Field(
-        default="cross-encoder/ms-marco-MiniLM-L-6-v2",
+        default=DEFAULT_RERANK_MODEL,
         description="Cross-encoder model for reranking",
     )
 

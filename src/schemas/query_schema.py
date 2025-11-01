@@ -3,6 +3,15 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, Literal, List
 from enum import Enum
+from src.config.constants import (
+    DEFAULT_LANGUAGE,
+    DEFAULT_SEMANTIC_WEIGHT,
+    DEFAULT_EXACT_WEIGHT,
+    DEFAULT_INITIAL_CANDIDATES,
+    DEFAULT_FINAL_TOP_K,
+    DEFAULT_ENABLE_RERANKING,
+    DEFAULT_RERANK_MODEL,
+)
 
 
 class QueryType(str, Enum):
@@ -51,7 +60,7 @@ class QueryClassification(BaseModel):
     intent: Optional[str] = Field(None, description="User intent (find_product, compare, etc.)")
 
     # Language detection
-    language: str = Field(default="de", description="Detected language")
+    language: str = Field(default=DEFAULT_LANGUAGE, description="Detected language")
 
 
 class SearchStrategy(BaseModel):
@@ -61,16 +70,16 @@ class SearchStrategy(BaseModel):
     description: str = Field(..., description="Strategy description")
 
     # Search parameters
-    semantic_weight: float = Field(default=0.7, ge=0.0, le=1.0)
-    exact_weight: float = Field(default=0.3, ge=0.0, le=1.0)
+    semantic_weight: float = Field(default=DEFAULT_SEMANTIC_WEIGHT, ge=0.0, le=1.0)
+    exact_weight: float = Field(default=DEFAULT_EXACT_WEIGHT, ge=0.0, le=1.0)
 
     # Result limits
-    initial_candidates: int = Field(default=20, ge=1, le=100)
-    final_results: int = Field(default=5, ge=1, le=20)
+    initial_candidates: int = Field(default=DEFAULT_INITIAL_CANDIDATES, ge=1, le=100)
+    final_results: int = Field(default=DEFAULT_FINAL_TOP_K, ge=1, le=20)
 
     # Reranking
-    enable_reranking: bool = Field(default=True)
-    rerank_model: str = Field(default="cross-encoder/ms-marco-MiniLM-L-6-v2")
+    enable_reranking: bool = Field(default=DEFAULT_ENABLE_RERANKING)
+    rerank_model: str = Field(default=DEFAULT_RERANK_MODEL)
 
     # Additional parameters
     parameters: Dict[str, Any] = Field(default_factory=dict)

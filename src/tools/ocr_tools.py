@@ -3,12 +3,13 @@
 from src.lib.base_tool import BaseTool, BaseToolConfig
 from pydantic import Field
 from mistralai import Mistral
+from src.config.constants import DEFAULT_OCR_MODEL
 
 
 class MistralOCRToolConfig(BaseToolConfig):
     api_key: str = Field(..., description="Mistral API key")
     model: str = Field(
-        default="mistral-ocr-latest", description="Mistral OCR model - optimal for English PDFs"
+        default=DEFAULT_OCR_MODEL, description="Mistral OCR model - optimal for English PDFs"
     )
 
 

@@ -3,15 +3,21 @@
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
 from pydantic import Field
 from typing import Literal
+from src.config.constants import (
+    DEFAULT_SQLITE_PATH,
+    DEFAULT_QDRANT_PATH,
+    DEFAULT_RERANK_TOP_K,
+    DEFAULT_FINAL_TOP_K,
+)
 
 
 class ResearchAgentConfig(BaseAgentConfig):
     """Configuration for Research Agent"""
 
-    sqlite_path: str = Field(default="./storage/products.db")
-    qdrant_path: str = Field(default="./storage/qdrant_storage")
-    rerank_top_k: int = Field(default=10)
-    final_top_k: int = Field(default=5)
+    sqlite_path: str = Field(default=DEFAULT_SQLITE_PATH)
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH)
+    rerank_top_k: int = Field(default=DEFAULT_RERANK_TOP_K)
+    final_top_k: int = Field(default=DEFAULT_FINAL_TOP_K)
 
 
 class ResearchAgent(BaseAgent):

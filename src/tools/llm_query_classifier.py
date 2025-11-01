@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from src.lib.base_tool import BaseTool, BaseToolConfig
 from src.schemas.query_schema import QueryClassification, QueryType, AttributeFilter
+from src.config.constants import DEFAULT_LLM_MODEL, DEFAULT_CLASSIFIER_TEMPERATURE
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,10 @@ class LLMQueryClassifierConfig(BaseToolConfig):
     """Configuration for LLM-based query classifier"""
 
     api_key: str = Field(..., description="Mistral API key")
-    model: str = Field(default="mistral-large-latest", description="LLM model for classification")
+    model: str = Field(default=DEFAULT_LLM_MODEL, description="LLM model for classification")
     temperature: float = Field(
-        default=0.1, description="Temperature for classification (low for consistency)"
+        default=DEFAULT_CLASSIFIER_TEMPERATURE,
+        description="Temperature for classification (low for consistency)",
     )
 
 

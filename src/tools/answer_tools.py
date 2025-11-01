@@ -8,6 +8,7 @@ import json
 import logging
 from src.schemas.answer_schema import GeneratedAnswer, Citation, AnswerValidation
 from src.config.settings import settings
+from src.config.constants import DEFAULT_LLM_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class AnswerGeneratorToolConfig(BaseToolConfig):
     """Configuration for answer generator tool"""
 
-    model: str = Field(default="mistral-large-latest")
+    model: str = Field(default=DEFAULT_LLM_MODEL)
     api_key: str = Field(..., description="Mistral API key")
 
 

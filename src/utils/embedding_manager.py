@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Union
 import logging
 import os
+from src.config.constants import DEFAULT_EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class EmbeddingManager:
     """Manages text embedding generation with CPU-only German models"""
 
-    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = DEFAULT_EMBEDDING_MODEL):
         self.model_name = model_name
         # Force CPU usage
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -23,8 +24,8 @@ class EmbeddingManager:
         except Exception as e:
             logger.warning(f"Failed to load {model_name}, falling back to basic model: {e}")
             # Fallback to basic English model
-            self.model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
-            logger.info("Loaded fallback English model: all-MiniLM-L6-v2 on CPU")
+            self.model = SentenceTransformer(DEFAULT_EMBEDDING_MODEL, device="cpu")
+            logger.info(f"Loaded fallback English model: {DEFAULT_EMBEDDING_MODEL} on CPU")
 
     def generate_embedding(self, text: str) -> List[float]:
         """Generate embedding for a single text"""

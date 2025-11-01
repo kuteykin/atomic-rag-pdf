@@ -2,14 +2,21 @@
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
 from pydantic import Field
+from src.config.constants import (
+    DEFAULT_PDF_DIRECTORY,
+    DEFAULT_SQLITE_PATH,
+    DEFAULT_QDRANT_PATH,
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+)
 
 
 class DataLoaderAgentConfig(BaseAgentConfig):
     """Configuration for Data Loader Agent"""
 
-    pdf_directory: str = Field(default="./data/pdfs")
-    sqlite_path: str = Field(default="./storage/products.db")
-    qdrant_path: str = Field(default="./storage/qdrant_storage")
+    pdf_directory: str = Field(default=DEFAULT_PDF_DIRECTORY)
+    sqlite_path: str = Field(default=DEFAULT_SQLITE_PATH)
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH)
 
 
 class DataLoaderAgent(BaseAgent):
@@ -134,7 +141,11 @@ class DataLoaderAgent(BaseAgent):
         }
 
     @staticmethod
-    def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+    def chunk_text(
+        text: str,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        overlap: int = DEFAULT_CHUNK_OVERLAP,
+    ) -> list[str]:
         """Split text into overlapping chunks"""
         if not text.strip():
             return []

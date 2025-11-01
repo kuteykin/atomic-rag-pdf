@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any, List
 import requests
 import logging
 import re
+from src.config.constants import DEFAULT_LLM_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class TranslationToolConfig(BaseToolConfig):
     """Configuration for translation tool"""
 
     api_key: str = Field(..., description="Mistral API key")
-    model: str = Field(default="mistral-large-latest", description="Mistral model for translation")
+    model: str = Field(default=DEFAULT_LLM_MODEL, description="Mistral model for translation")
 
 
 class TranslationTool(BaseTool):

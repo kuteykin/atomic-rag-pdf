@@ -11,6 +11,12 @@ import logging
 from src.utils.db_manager import DatabaseManager
 from src.utils.embedding_manager import EmbeddingManager
 from src.schemas.product_schema import ProductSpecification
+from src.config.constants import (
+    DEFAULT_SQLITE_PATH,
+    DEFAULT_QDRANT_PATH,
+    DEFAULT_COLLECTION_NAME,
+    DEFAULT_EMBEDDING_MODEL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +24,7 @@ logger = logging.getLogger(__name__)
 class SQLiteStorageToolConfig(BaseToolConfig):
     """Configuration for SQLite storage tool"""
 
-    db_path: str = Field(default="./storage/products.db")
+    db_path: str = Field(default=DEFAULT_SQLITE_PATH)
 
 
 class SQLiteStorageTool(BaseTool):
@@ -74,8 +80,8 @@ class SQLiteStorageTool(BaseTool):
 class QdrantStorageToolConfig(BaseToolConfig):
     """Configuration for Qdrant storage tool"""
 
-    qdrant_path: str = Field(default="./storage/qdrant_storage")
-    collection_name: str = Field(default="products")
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH)
+    collection_name: str = Field(default=DEFAULT_COLLECTION_NAME)
 
 
 class QdrantStorageTool(BaseTool):
@@ -203,7 +209,7 @@ class QdrantStorageTool(BaseTool):
 class EmbeddingToolConfig(BaseToolConfig):
     """Configuration for embedding tool"""
 
-    model_name: str = Field(default="sentence-transformers/all-MiniLM-L6-v2")
+    model_name: str = Field(default=DEFAULT_EMBEDDING_MODEL)
 
 
 class EmbeddingTool(BaseTool):

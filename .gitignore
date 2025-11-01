@@ -116,8 +116,8 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-storage/*.db
-storage/qdrant_storage/
+storage/
+
 data/pdfs/*.pdf
 *.log
 
