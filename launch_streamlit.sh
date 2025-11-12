@@ -10,10 +10,10 @@ if [ ! -f "streamlit_app.py" ]; then
     exit 1
 fi
 
-# Check if .env file exists
-if [ ! -f ".env" ]; then
-    echo "⚠️  Warning: .env file not found. Please ensure MISTRAL_API_KEY is set."
-    echo "   You can create .env file or set environment variables."
+# Check if MISTRAL_API_KEY is set
+if [ -z "$MISTRAL_API_KEY" ]; then
+    echo "⚠️  Warning: MISTRAL_API_KEY not set in environment"
+    echo "   Please set MISTRAL_API_KEY: export MISTRAL_API_KEY='your_key_here'"
 fi
 
 echo "📋 System Information:"
@@ -29,4 +29,12 @@ echo "   • Press Ctrl+C to stop"
 echo ""
 
 # Launch Streamlit using Poetry (recommended approach)
-/home/drphyl/.local/bin/poetry run streamlit run streamlit_app.py --server.port 8501 --server.address localhost
+# Use poetry from PATH, or find it if not in PATH
+POETRY_CMD=$(command -v poetry)
+if [ -z "$POETRY_CMD" ]; then
+    echo "❌ Error: poetry not found in PATH"
+    echo "   Please install poetry or add it to your PATH"
+    exit 1
+fi
+
+$POETRY_CMD run streamlit run streamlit_app.py --server.port 8501 --server.address localhost

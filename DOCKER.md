@@ -13,9 +13,9 @@ This guide covers deploying the Atomic RAG System using a single optimized Docke
 
 ### 1. Environment Setup
 
-Create a `.env` file in the project root:
+Set the `MISTRAL_API_KEY` environment variable:
 ```bash
-MISTRAL_API_KEY=your_mistral_api_key_here
+export MISTRAL_API_KEY=your_mistral_api_key_here
 ```
 
 ### 2. Build and Run
@@ -93,8 +93,8 @@ STREAMLIT_SERVER_ADDRESS=0.0.0.0
 # PDF data (read-only)
 -v $(pwd)/data:/app/data:ro
 
-# Environment file
--v $(pwd)/.env:/app/.env:ro
+# Optional: Use environment file (if you have one)
+# -v $(pwd)/.env:/app/.env:ro
 ```
 
 ## 🌐 Access Points
@@ -167,8 +167,9 @@ docker stats <container_id>
 
 3. **API Key Not Set**
    ```bash
-   # Check environment
-   docker run --env-file .env atomic-rag:latest
+   # Set environment variable and run
+   export MISTRAL_API_KEY=your_key_here
+   docker run -e MISTRAL_API_KEY=$MISTRAL_API_KEY atomic-rag:latest
    ```
 
 ### Debug Mode

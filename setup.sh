@@ -16,77 +16,14 @@ fi
 echo "📚 Installing dependencies..."
 poetry install
 
-# Create .env file if it doesn't exist
-if [ ! -f .env ]; then
-    echo "⚙️  Creating .env file..."
-    cat > .env << EOF
-# Atomic RAG System - Environment Configuration
-# Mistral API key should be set in system environment variables
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-# SQLite database path
-SQLITE_PATH=./storage/products.db
-
-# Qdrant vector database path
-QDRANT_PATH=./storage/qdrant_storage
-
-# =============================================================================
-# PDF PROCESSING
-# =============================================================================
-# Directory containing PDF files to process
-PDF_DIRECTORY=./data/pdfs
-
-# =============================================================================
-# MODEL CONFIGURATION
-# =============================================================================
-# LLM model for answer generation
-LLM_MODEL=mistral-large-latest
-
-# Embedding model (CPU-only, English-optimized)
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-
-# OCR model (optimal for English PDFs)
-OCR_MODEL=mistral-ocr-latest
-
-# Reranking model for search results
-RERANK_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
-
-# =============================================================================
-# SEARCH CONFIGURATION
-# =============================================================================
-# Number of results to rerank
-RERANK_TOP_K=10
-
-# Final number of results to return
-FINAL_TOP_K=5
-
-# =============================================================================
-# TEXT PROCESSING
-# =============================================================================
-# Text chunk size for processing
-CHUNK_SIZE=500
-
-# Text chunk overlap
-CHUNK_OVERLAP=50
-
-# =============================================================================
-# LANGUAGE SETTINGS
-# =============================================================================
-# Default language for processing
-DEFAULT_LANGUAGE=en
-
-# =============================================================================
-# LOGGING
-# =============================================================================
-# Logging level (DEBUG, INFO, WARNING, ERROR)
-LOG_LEVEL=INFO
-EOF
-    echo "📝 .env file created with default configuration"
-    echo "🔑 Make sure MISTRAL_API_KEY is set in your system environment"
+# Check if MISTRAL_API_KEY is set
+if [ -z "$MISTRAL_API_KEY" ]; then
+    echo "⚠️  Warning: MISTRAL_API_KEY not set in environment"
+    echo "🔑 Please set MISTRAL_API_KEY in your system environment:"
+    echo "   export MISTRAL_API_KEY='your_key_here'"
+    echo "   Or add it to your ~/.bashrc or ~/.zshrc"
 else
-    echo "✅ .env file already exists"
+    echo "✅ MISTRAL_API_KEY is set"
 fi
 
 # Create necessary directories
@@ -106,7 +43,7 @@ poetry run python test_basic.py
 echo "🎉 Setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Ensure MISTRAL_API_KEY is set in your system environment"
+echo "1. Ensure MISTRAL_API_KEY is set in your system environment (export MISTRAL_API_KEY='your_key')"
 echo "2. Add PDF files to data/pdfs/ directory (100+ files already available)"
 echo "3. Run: poetry run python main.py load"
 echo "4. Run: poetry run python main.py search 'your query here'"

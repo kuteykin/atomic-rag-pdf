@@ -23,29 +23,23 @@ from .constants import (
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
-    
-    Only API keys and environment-specific overrides should be in .env file.
+
     All default values come from constants.py.
+    API keys should be set in system environment variables.
     """
 
-    model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
+    model_config = ConfigDict(env_file_encoding="utf-8", case_sensitive=False)
 
-    # API Keys (required from .env or environment)
+    # API Keys (required from environment variables)
     mistral_api_key: str = Field(..., description="Mistral API key")
     openai_api_key: Optional[str] = Field(None, description="OpenAI API key (optional)")
 
     # Database paths (optional overrides)
-    sqlite_path: str = Field(
-        default=DEFAULT_SQLITE_PATH, description="SQLite database path"
-    )
-    qdrant_path: str = Field(
-        default=DEFAULT_QDRANT_PATH, description="Qdrant storage path"
-    )
+    sqlite_path: str = Field(default=DEFAULT_SQLITE_PATH, description="SQLite database path")
+    qdrant_path: str = Field(default=DEFAULT_QDRANT_PATH, description="Qdrant storage path")
 
     # PDF processing (optional override)
-    pdf_directory: str = Field(
-        default=DEFAULT_PDF_DIRECTORY, description="PDF input directory"
-    )
+    pdf_directory: str = Field(default=DEFAULT_PDF_DIRECTORY, description="PDF input directory")
 
     # LLM configuration (optional overrides)
     llm_model: str = Field(default=DEFAULT_LLM_MODEL, description="LLM model name")
@@ -58,9 +52,7 @@ class Settings(BaseSettings):
     rerank_top_k: int = Field(
         default=DEFAULT_RERANK_TOP_K, description="Number of results to rerank"
     )
-    final_top_k: int = Field(
-        default=DEFAULT_FINAL_TOP_K, description="Final number of results"
-    )
+    final_top_k: int = Field(default=DEFAULT_FINAL_TOP_K, description="Final number of results")
 
     # OCR configuration (optional override)
     ocr_model: str = Field(
@@ -68,20 +60,14 @@ class Settings(BaseSettings):
     )
 
     # Reranking configuration (optional override)
-    rerank_model: str = Field(
-        default=DEFAULT_RERANK_MODEL, description="Reranking model"
-    )
+    rerank_model: str = Field(default=DEFAULT_RERANK_MODEL, description="Reranking model")
 
     # Text processing (optional overrides)
     chunk_size: int = Field(default=DEFAULT_CHUNK_SIZE, description="Text chunk size")
-    chunk_overlap: int = Field(
-        default=DEFAULT_CHUNK_OVERLAP, description="Text chunk overlap"
-    )
+    chunk_overlap: int = Field(default=DEFAULT_CHUNK_OVERLAP, description="Text chunk overlap")
 
     # Language settings (optional override)
-    default_language: str = Field(
-        default=DEFAULT_LANGUAGE, description="Default language"
-    )
+    default_language: str = Field(default=DEFAULT_LANGUAGE, description="Default language")
 
     # Logging (optional override)
     log_level: str = Field(default=DEFAULT_LOG_LEVEL, description="Logging level")

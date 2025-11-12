@@ -3,7 +3,7 @@
 """
 Application constants and default configuration values.
 These values are used as defaults throughout the application.
-Override via .env file only for environment-specific settings (API keys, paths).
+Override via environment variables for environment-specific settings (API keys, paths).
 """
 
 # =============================================================================
@@ -81,4 +81,3 @@ DEFAULT_CLASSIFIER_TEMPERATURE: float = 0.1
 # =============================================================================
 
 DEFAULT_LOG_LEVEL: str = "INFO"
-

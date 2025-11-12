@@ -28,7 +28,7 @@ show_help() {
     echo "  -p, --port PORT       Host port [default: 8501]"
     echo "  -s, --storage         Mount persistent storage"
     echo "  -d, --data            Mount PDF data directory"
-    echo "  -e, --env-file FILE   Use environment file [default: .env]"
+    echo "  -e, --env-file FILE   Use environment file (optional)"
     echo "  -h, --help            Show this help message"
     echo ""
     echo "Examples:"
@@ -74,10 +74,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Set default env file if not specified
-if [ -z "$ENV_FILE" ]; then
-    ENV_FILE=".env"
-fi
+# Set default env file if not specified (optional)
+# If not provided, will use environment variables directly
 
 echo -e "${BLUE}🐳 Running Atomic RAG System Docker Container${NC}"
 echo -e "${BLUE}==============================================${NC}"
@@ -85,7 +83,11 @@ echo -e "Image: ${YELLOW}$TAG:latest${NC}"
 echo -e "Port: ${YELLOW}$PORT:8501${NC}"
 echo -e "Storage Mount: ${YELLOW}$STORAGE_MOUNT${NC}"
 echo -e "Data Mount: ${YELLOW}$DATA_MOUNT${NC}"
-echo -e "Env File: ${YELLOW}$ENV_FILE${NC}"
+if [ -n "$ENV_FILE" ]; then
+    echo -e "Env File: ${YELLOW}$ENV_FILE${NC}"
+else
+    echo -e "Env File: ${YELLOW}Using environment variables${NC}"
+fi
 echo ""
 
 # Check if Docker is running
@@ -100,10 +102,19 @@ if ! docker image inspect "$TAG:latest" > /dev/null 2>&1; then
     ./docker-build.sh -g "$TAG"
 fi
 
-# Check if MISTRAL_API_KEY is set
-if [ -z "$MISTRAL_API_KEY" ] && [ ! -f "$ENV_FILE" ]; then
-    echo -e "${RED}❌ MISTRAL_API_KEY not set and $ENV_FILE not found!${NC}"
-    echo -e "${YELLOW}   Please set MISTRAL_API_KEY environment variable or create $ENV_FILE file.${NC}"
+# Validate environment configuration
+# If ENV_FILE is specified, it must exist
+if [ -n "$ENV_FILE" ] && [ ! -f "$ENV_FILE" ]; then
+    echo -e "${RED}❌ Environment file not found: $ENV_FILE${NC}"
+    echo -e "${YELLOW}   Please provide a valid environment file or set MISTRAL_API_KEY environment variable.${NC}"
+    exit 1
+fi
+
+# Check if MISTRAL_API_KEY is set or a valid ENV_FILE is provided
+# This validates: MISTRAL_API_KEY not set AND (ENV_FILE not specified OR ENV_FILE doesn't exist)
+if [ -z "$MISTRAL_API_KEY" ] && { [ -z "$ENV_FILE" ] || [ ! -f "$ENV_FILE" ]; }; then
+    echo -e "${RED}❌ MISTRAL_API_KEY not set!${NC}"
+    echo -e "${YELLOW}   Please set MISTRAL_API_KEY environment variable or use -e/--env-file option with a valid file.${NC}"
     exit 1
 fi
 
