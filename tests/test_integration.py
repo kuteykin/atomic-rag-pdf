@@ -19,8 +19,8 @@ class TestSchemas:
 
         assert product.product_name == "Test Leuchte"
         assert product.sku == "TEST-001"
-        assert product.watt == 100
-        assert product.lebensdauer_stunden == 50000
+        assert product.wattage == 100
+        assert product.lifetime_hours == 50000
 
     def test_query_classification(self):
         """Test QueryClassification schema"""
@@ -34,11 +34,11 @@ class TestSchemas:
 
     def test_attribute_filter(self):
         """Test AttributeFilter schema"""
-        filters = AttributeFilter(watt_min=100, watt_max=500, lebensdauer_min=1000)
+        filters = AttributeFilter(wattage_min=100, wattage_max=500, lifetime_hours_min=1000)
 
-        assert filters.watt_min == 100
-        assert filters.watt_max == 500
-        assert filters.lebensdauer_min == 1000
+        assert filters.wattage_min == 100
+        assert filters.wattage_max == 500
+        assert filters.lifetime_hours_min == 1000
 
     def test_generated_answer(self):
         """Test GeneratedAnswer schema"""
@@ -77,9 +77,9 @@ class TestQueryTypes:
     def test_filter_queries(self):
         """Test filter query detection"""
         filter_queries = [
-            "mindestens 1000 Watt",
+            "mindestens 1000 wattage",
             "mehr als 400 Stunden",
-            "zwischen 200 und 500 Watt",
+            "zwischen 200 und 500 wattage",
             "Farbtemperatur 3000K",
         ]
 
@@ -90,7 +90,7 @@ class TestQueryTypes:
                     "mindestens",
                     "mehr als",
                     "zwischen",
-                    "watt",
+                    "wattage",
                     "stunden",
                     "farbtemperatur",
                 ]
@@ -119,7 +119,7 @@ class TestSystemIntegration:
         test_queries = [
             "Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?",
             "Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?",
-            "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden.",
+            "Gebe mir alle Leuchtmittel mit mindestens 1000 wattage und Lebensdauer von mehr als 400 Stunden.",
             "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?",
         ]
 

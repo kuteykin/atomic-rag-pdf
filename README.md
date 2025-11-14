@@ -30,6 +30,7 @@
   - **Poetry Dependency Management**: Reproducible builds
   - **Comprehensive Testing**: Automated test suite
   - **Error Handling**: Graceful fallbacks and recovery
+  - **Component-Based Logging**: Separate daily logs for debugging and monitoring
 
 ## 🌍 Multilingual Support
 
@@ -178,6 +179,88 @@ print(f'LLM Model: {settings.llm_model}')
 "
 ```
 
+## 📊 Logging & Monitoring
+
+The system includes a comprehensive **component-based logging system** for debugging and monitoring:
+
+### Log Files (Automatic Daily Rotation with Folders)
+
+All logs are stored in `./logs/` with component-specific subdirectories:
+
+```
+logs/
+├── app_YYYY-MM-DD.log          # Complete log (all components)
+├── main/YYYY-MM-DD.log         # CLI commands
+├── agents/YYYY-MM-DD.log       # Agent operations
+├── tools/YYYY-MM-DD.log        # Tool execution
+├── api/YYYY-MM-DD.log          # External API calls
+├── database/YYYY-MM-DD.log     # Database operations
+└── streamlit/YYYY-MM-DD.log    # Web interface
+```
+
+| Component | Location | Contains |
+|-----------|----------|----------|
+| **All** | `app_YYYY-MM-DD.log` | Complete application log (all components combined) |
+| **Main** | `main/YYYY-MM-DD.log` | CLI commands (load, search, test) |
+| **Agents** | `agents/YYYY-MM-DD.log` | Data Loader, Research, QA agent operations |
+| **Tools** | `tools/YYYY-MM-DD.log` | OCR, translation, search, classification |
+| **Database** | `database/YYYY-MM-DD.log` | SQLite and Qdrant operations |
+| **API** | `api/YYYY-MM-DD.log` | Mistral API calls and errors |
+| **Streamlit** | `streamlit/YYYY-MM-DD.log` | Web interface activity |
+
+### Quick Logging Commands
+
+```bash
+# View today's complete log in real-time
+tail -f logs/app_$(date +%Y-%m-%d).log
+
+# View specific component logs
+tail -f logs/agents/$(date +%Y-%m-%d).log
+tail -f logs/tools/$(date +%Y-%m-%d).log
+tail -f logs/api/$(date +%Y-%m-%d).log
+
+# Search for errors across all logs
+grep -r ERROR logs/
+
+# Search in specific component
+grep ERROR logs/agents/*.log
+grep "Translation" logs/tools/*.log
+grep "API error" logs/api/*.log
+
+# Test logging system
+python test_logging.py
+```
+
+### Features
+
+✅ **Folder organization** - Separate subdirectories per component
+✅ **Daily rotation** - New files created each day
+✅ **Component separation** - Easy to find relevant logs
+✅ **Detailed formatting** - Timestamp, module, level, file:line, message
+✅ **Exception tracking** - Full stack traces for debugging
+✅ **Fallback visibility** - Track when/why fallback mechanisms activate
+✅ **Size management** - 10MB per file with 5 backup copies
+
+### Documentation
+
+- 📖 **Quick Start**: [LOGGING_QUICK_START.md](LOGGING_QUICK_START.md)
+- 📚 **Full Documentation**: [LOGGING_SYSTEM.md](LOGGING_SYSTEM.md)
+- 📁 **Logs Directory**: [logs/README.md](logs/README.md)
+
+### Example Log Output
+
+```bash
+# logs/agents/2025-11-14.log
+2025-11-14 02:20:44 - src.agents.research_agent - INFO - [research_agent.py:76] - Query classified as: SEMANTIC
+
+# logs/tools/2025-11-14.log
+2025-11-14 02:21:15 - src.tools.translation_tools - ERROR - [translation_tools.py:88] - Error translating to English
+2025-11-14 02:21:15 - src.tools.translation_tools - INFO - [translation_tools.py:89] - Returning original text as fallback
+
+# logs/api/2025-11-14.log
+2025-11-14 02:21:20 - src.api - ERROR - [api.py:45] - Mistral API timeout after 30s
+```
+
 ## Usage
 
 ### 🌐 Web Frontend (Streamlit)
@@ -312,7 +395,7 @@ The system is designed to handle these specific test queries (all working):
 
 1. **Exact Match**: "Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?"
 2. **Semantic Search**: "Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?"
-3. **Attribute Filter**: "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden."
+3. **Attribute Filter**: "Gebe mir alle Leuchtmittel mit mindestens 1000 wattage und Lebensdauer von mehr als 400 Stunden."
 4. **Product Number**: "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?"
 
 **✅ All test queries are working** - Run `poetry run python main.py test` to verify.
@@ -522,6 +605,14 @@ atomic-rag-pdf/
 ├── storage/                 # Database storage
 │   ├── products.db                 # SQLite database
 │   └── qdrant_storage/             # Qdrant vector storage
+├── logs/                    # Component-based logs (organized by folder)
+│   ├── app_YYYY-MM-DD.log          # Complete application log
+│   ├── main/YYYY-MM-DD.log         # CLI command logs
+│   ├── agents/YYYY-MM-DD.log       # Agent operation logs
+│   ├── tools/YYYY-MM-DD.log        # Tool execution logs
+│   ├── api/YYYY-MM-DD.log          # API call logs
+│   ├── database/YYYY-MM-DD.log     # Database operation logs
+│   └── streamlit/YYYY-MM-DD.log    # Web interface logs
 ├── main.py                  # CLI entry point
 ├── streamlit_app.py         # Web frontend (Streamlit)
 ├── launch_streamlit.sh      # Streamlit launcher script
@@ -533,6 +624,7 @@ atomic-rag-pdf/
 ├── setup.sh                # Automated setup script
 ├── pyproject.toml          # Poetry configuration
 ├── test_basic.py           # Basic functionality test
+├── test_logging.py         # Logging system test
 └── README.md               # This documentation
 ```
 
@@ -554,8 +646,9 @@ atomic-rag-pdf/
 ### Key Features
 - **CPU-Only**: No GPU requirements, optimized for CPU processing
 - **Multilingual**: Automatic translation support for multiple languages
-- **Production-Ready**: Error handling, logging, and graceful fallbacks
+- **Production-Ready**: Error handling, component-based logging, and graceful fallbacks
 - **Scalable**: Designed for 10,000+ PDFs with modular architecture
+- **Comprehensive Logging**: Daily rotating logs with component separation for debugging
 
 ## 🎯 Project Status: Production Ready
 
@@ -583,7 +676,8 @@ The Atomic RAG System is **production-ready** and fully functional with all requ
 - **✅ Embedding Model**: CPU-only English-optimized model
 - **✅ LLM Integration**: Mistral Large Latest for answer generation
 - **✅ Translation**: Automatic query/answer translation
-- **✅ Error Handling**: Comprehensive error recovery
+- **✅ Error Handling**: Comprehensive error recovery with graceful fallbacks
+- **✅ Logging System**: Component-based daily rotating logs
 - **✅ Testing**: Complete test suite with all tests passing
 
 ### 📊 Performance Metrics

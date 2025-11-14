@@ -73,7 +73,7 @@ class LLMQueryClassifier(BaseTool):
 2. **ATTRIBUTE_FILTER**: Filtering products by specific attributes/criteria
    - Numerical filters (wattage, lifetime, dimensions)
    - Categorical filters (color temperature, IP rating, certifications)
-   - Examples: ">100W", "mindestens 1000 Watt", "IP65", "3000K"
+   - Examples: ">100W", "mindestens 1000 wattage", "IP65", "3000K"
 
 3. **HYBRID**: Combination of semantic search + attribute filters
    - Descriptive queries with specific criteria
@@ -100,10 +100,10 @@ class LLMQueryClassifier(BaseTool):
     "confidence": 0.0-1.0,
     "reasoning": "Brief explanation of classification",
     "filters": {{
-        "watt_min": null or number,
-        "watt_max": null or number,
-        "lebensdauer_min": null or number,
-        "lebensdauer_max": null or number,
+        "wattage_min": null or number,
+        "wattage_max": null or number,
+        "lifetime_hours_min": null or number,
+        "lifetime_hours_max": null or number,
         "color_temperature": null or string like "3000K",
         "application_area": null or string,
         "certifications": [],
@@ -114,7 +114,7 @@ class LLMQueryClassifier(BaseTool):
 
 **Example responses (multilingual):**
 Query: "LED lights >100W" (English)
-Response: {{"type": "HYBRID", "confidence": 0.9, "reasoning": "Combines semantic (LED lights) with wattage filter", "filters": {{"watt_min": 100}}, "keywords": ["led", "lights"]}}
+Response: {{"type": "HYBRID", "confidence": 0.9, "reasoning": "Combines semantic (LED lights) with wattage filter", "filters": {{"wattage_min": 100}}, "keywords": ["led", "lights"]}}
 
 Query: "4062172212311" (Any language)
 Response: {{"type": "EXACT_MATCH", "confidence": 0.95, "reasoning": "Specific product number", "filters": null, "keywords": []}}
@@ -123,10 +123,10 @@ Query: "Leuchten für Büro" (German)
 Response: {{"type": "SEMANTIC", "confidence": 0.8, "reasoning": "General descriptive query", "filters": null, "keywords": ["lights", "office"]}}
 
 Query: ">1000W und >400 Stunden" (German)
-Response: {{"type": "ATTRIBUTE_FILTER", "confidence": 0.9, "reasoning": "Pure attribute filtering", "filters": {{"watt_min": 1000, "lebensdauer_min": 400}}, "keywords": []}}
+Response: {{"type": "ATTRIBUTE_FILTER", "confidence": 0.9, "reasoning": "Pure attribute filtering", "filters": {{"wattage_min": 1000, "lifetime_hours_min": 400}}, "keywords": []}}
 
 Query: "Lumières LED >100W" (French)
-Response: {{"type": "HYBRID", "confidence": 0.9, "reasoning": "Combines semantic (LED lights) with wattage filter", "filters": {{"watt_min": 100}}, "keywords": ["led", "lights"]}}
+Response: {{"type": "HYBRID", "confidence": 0.9, "reasoning": "Combines semantic (LED lights) with wattage filter", "filters": {{"wattage_min": 100}}, "keywords": ["led", "lights"]}}
 
 **Now classify this query:**"""
 

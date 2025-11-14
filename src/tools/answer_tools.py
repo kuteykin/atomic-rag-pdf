@@ -183,7 +183,7 @@ class FactCheckerTool(BaseTool):
                 if re.search(r"\d+", sentence) or any(
                     keyword in sentence.lower()
                     for keyword in [
-                        "watt",
+                        "wattage",
                         "stunden",
                         "kelvin",
                         "lumen",

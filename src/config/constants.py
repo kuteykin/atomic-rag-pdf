@@ -54,7 +54,7 @@ DEFAULT_ENABLE_RERANKING: bool = True
 
 # Chunking
 DEFAULT_CHUNK_SIZE: int = 500
-DEFAULT_CHUNK_OVERLAP: int = 50
+DEFAULT_CHUNK_OVERLAP: int = 30
 
 # =============================================================================
 # LANGUAGE SETTINGS

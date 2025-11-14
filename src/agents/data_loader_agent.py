@@ -31,9 +31,9 @@ class DataLoaderAgent(BaseAgent):
     def __init__(self, config: DataLoaderAgentConfig):
         # Tools for this agent
         from src.tools.ocr_tools import MistralOCRTool, MistralOCRToolConfig
-        from src.tools.parser_tools import (
-            StructuredParserTool,
-            StructuredParserToolConfig,
+        from src.tools.llm_parser_tools import (
+            LLMParserTool,
+            LLMParserToolConfig,
         )
         from src.tools.storage_tools import (
             SQLiteStorageTool,
@@ -49,7 +49,10 @@ class DataLoaderAgent(BaseAgent):
 
         # Initialize tools
         self.ocr_tool = MistralOCRTool(MistralOCRToolConfig(api_key=settings.mistral_api_key))
-        self.parser_tool = StructuredParserTool(StructuredParserToolConfig())
+        # Use LLM-based parser instead of regex parser
+        self.parser_tool = LLMParserTool(
+            LLMParserToolConfig(api_key=settings.mistral_api_key, model=settings.llm_model)
+        )
         self.sqlite_tool = SQLiteStorageTool(SQLiteStorageToolConfig(db_path=config.sqlite_path))
         self.qdrant_tool = QdrantStorageTool(
             QdrantStorageToolConfig(qdrant_path=config.qdrant_path)
@@ -77,6 +80,12 @@ class DataLoaderAgent(BaseAgent):
             sqlite_ids.append(product_id)
 
         # Step 4: Generate embeddings and store in Qdrant
+        from src.utils.schema_utils import SchemaIntrospector
+        from src.schemas.product_schema import ProductSpecification
+
+        # Get metadata fields dynamically
+        metadata_fields = SchemaIntrospector.get_qdrant_metadata_fields(ProductSpecification)
+
         qdrant_ids = []
         for i, product in enumerate(parsed_products):
             # Chunk product description
@@ -86,18 +95,22 @@ class DataLoaderAgent(BaseAgent):
                 # Generate embedding
                 embedding = self.embedding_tool.generate(chunk)
 
+                # Build payload dynamically from metadata fields
+                payload = {
+                    "product_id": sqlite_ids[i],
+                    "text": chunk,
+                }
+
+                # Add all metadata fields that exist in the product
+                for field in metadata_fields:
+                    value = getattr(product, field, None)
+                    if value is not None:
+                        payload[field] = value
+
                 # Store in Qdrant with metadata
                 point_id = self.qdrant_tool.insert_point(
                     vector=embedding,
-                    payload={
-                        "product_id": sqlite_ids[i],
-                        "text": chunk,
-                        "product_name": product.product_name,
-                        "sku": product.sku,
-                        "watt": product.watt,
-                        "lebensdauer_stunden": product.lebensdauer_stunden,
-                        "source_pdf": pdf_path,
-                    },
+                    payload=payload,
                 )
                 qdrant_ids.append(point_id)
 

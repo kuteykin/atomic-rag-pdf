@@ -89,8 +89,8 @@ class QdrantSearchTool(BaseTool):
                     "text": payload.get("text", ""),
                     "product_name": payload.get("product_name", ""),
                     "sku": payload.get("sku", ""),
-                    "watt": payload.get("watt"),
-                    "lebensdauer_stunden": payload.get("lebensdauer_stunden"),
+                    "wattage": payload.get("wattage"),
+                    "lifetime_hours": payload.get("lifetime_hours"),
                     "source_pdf": payload.get("source_pdf", ""),
                     "product_id": payload.get("product_id"),
                 }

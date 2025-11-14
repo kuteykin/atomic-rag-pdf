@@ -31,6 +31,7 @@ echo "📁 Creating directories..."
 mkdir -p data/pdfs
 mkdir -p storage
 mkdir -p tests
+mkdir -p logs
 
 # Initialize databases
 echo "🗄️  Initializing databases..."

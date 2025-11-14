@@ -16,7 +16,7 @@ class ProductSpecification(BaseModel):
     primary_product_number: Optional[str] = Field(None, description="Primary product number")
 
     # Technical specifications
-    watt: Optional[int] = Field(None, description="Power consumption in watts")
+    wattage: Optional[int] = Field(None, description="Power consumption in wattages")
     voltage: Optional[str] = Field(None, description="Operating voltage")
     current: Optional[str] = Field(None, description="Current consumption")
 
@@ -29,7 +29,7 @@ class ProductSpecification(BaseModel):
     beam_angle: Optional[str] = Field(None, description="Beam angle")
 
     # Lifetime and durability
-    lebensdauer_stunden: Optional[int] = Field(None, description="Lifetime in hours")
+    lifetime_hours: Optional[int] = Field(None, description="Lifetime in hours")
     operating_temperature: Optional[str] = Field(None, description="Operating temperature range")
 
     # Physical dimensions

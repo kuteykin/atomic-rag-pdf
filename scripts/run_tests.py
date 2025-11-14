@@ -28,7 +28,7 @@ def main():
     test_queries = [
         "Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?",
         "Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?",
-        "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden.",
+        "Gebe mir alle Leuchtmittel mit mindestens 1000 wattage und Lebensdauer von mehr als 400 Stunden.",
         "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?",
     ]
 

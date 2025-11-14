@@ -7,11 +7,17 @@ from src.agents.research_agent import ResearchAgent, ResearchAgentConfig
 from src.agents.qa_agent import QualityAssuranceAgent, QAAgentConfig
 from dotenv import load_dotenv
 import os
+import logging
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from src.utils.logging_config import setup_logging
 
 load_dotenv()
+
+# Initialize logging before any other operations
+setup_logging(console=True, file=True)
+logger = logging.getLogger(__name__)
 
 app = typer.Typer(help="Atomic RAG System - Multi-agent PDF search system")
 console = Console()
@@ -25,16 +31,19 @@ def load(
     ),
 ):
     """Load and process PDF documents with optional batch limit"""
+    logger.info(f"Starting PDF loading process - Directory: {pdf_dir}, Limit: {limit}")
     console.print(Panel("🔄 Initializing Data Loader Agent...", style="blue"))
 
     try:
         # Initialize Data Loader Agent
         loader_config = DataLoaderAgentConfig(pdf_directory=pdf_dir)
         loader_agent = DataLoaderAgent(loader_config)
+        logger.info("Data Loader Agent initialized successfully")
 
         # Process PDFs with optional limit
         console.print(Panel("📄 Processing PDFs...", style="blue"))
         results = loader_agent.process_directory(limit=limit)
+        logger.info(f"Processing complete - Success: {results['successful']}, Failed: {results['failed']}")
 
         # Display results
         table = Table(title="Processing Results")
@@ -52,10 +61,12 @@ def load(
             for detail in results["details"]:
                 if "error" in detail:
                     console.print(f"   - {detail['pdf']}: {detail['error']}")
+                    logger.error(f"PDF processing failed: {detail['pdf']} - {detail['error']}")
 
         console.print(Panel("✅ Processing complete!", style="green"))
 
     except Exception as e:
+        logger.exception(f"Fatal error in load command: {e}")
         console.print(Panel(f"❌ Error: {e}", style="red"))
         raise typer.Exit(1)
 
@@ -66,23 +77,28 @@ def search(
     pdf_dir: str = typer.Option("./data/pdfs", "--pdf-dir", help="Directory containing PDF files"),
 ):
     """Search for information in processed documents"""
+    logger.info(f"Starting search - Query: {query}")
     console.print(Panel(f"🔍 Searching for: {query}", style="blue"))
 
     try:
         # Initialize Research Agent
         research_config = ResearchAgentConfig()
         research_agent = ResearchAgent(research_config)
+        logger.info("Research Agent initialized")
 
         # Execute search
         search_results = research_agent.search(query)
+        logger.info(f"Search completed - Query type: {search_results['query_type']}, Results: {search_results['total_results']}")
 
         # Initialize QA Agent
         qa_config = QAAgentConfig()
         qa_agent = QualityAssuranceAgent(qa_config)
+        logger.info("QA Agent initialized")
 
         # Generate answer
         console.print(Panel("💡 Generating answer...", style="blue"))
         answer = qa_agent.generate_answer(query, search_results)
+        logger.info(f"Answer generated - Confidence: {answer['confidence_score']:.2%}")
 
         # Display results
         console.print(Panel(f"Query: {answer['query']}", style="bold blue"))
@@ -91,6 +107,7 @@ def search(
         if answer.get("translation_needed"):
             console.print(f"[yellow]Language detected: {answer['detected_language']}[/yellow]")
             console.print(f"[yellow]Translated query: {answer['english_query']}[/yellow]")
+            logger.info(f"Translation applied - Language: {answer['detected_language']}")
 
         console.print(Panel(answer["answer"], style="white"))
 
@@ -111,8 +128,10 @@ def search(
             console.print("\n⚠️  Warnings:")
             for warning in answer["warnings"]:
                 console.print(f"   - {warning}")
+                logger.warning(f"QA Warning: {warning}")
 
     except Exception as e:
+        logger.exception(f"Fatal error in search command: {e}")
         console.print(Panel(f"❌ Error: {e}", style="red"))
         raise typer.Exit(1)
 
@@ -120,21 +139,24 @@ def search(
 @app.command()
 def test():
     """Run test queries"""
+    logger.info("Starting test suite")
     console.print(Panel("🧪 Running test queries...", style="blue"))
 
     # Test queries from requirements
     test_queries = [
         "Was ist die Farbtemperatur von SIRIUS HRI 330W 2/CS 1/SKU?",
         "Welche Leuchten sind gut für die Ausstattung im Operationssaal geeignet?",
-        "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden.",
+        "Gebe mir alle Leuchtmittel mit mindestens 1000 wattage und Lebensdauer von mehr als 400 Stunden.",
         "Welche Leuchte hat die primäre Erzeugnisnummer 4062172212311?",
     ]
 
     try:
         research_agent = ResearchAgent(ResearchAgentConfig())
         qa_agent = QualityAssuranceAgent(QAAgentConfig())
+        logger.info("Test agents initialized")
 
         for i, query in enumerate(test_queries, 1):
+            logger.info(f"Running test {i}/4: {query}")
             console.print(Panel(f"TEST {i}/4: {query}", style="bold yellow"))
 
             search_results = research_agent.search(query)
@@ -148,10 +170,13 @@ def test():
             console.print(Panel(answer["answer"], style="white"))
             console.print(f"✓ Confidence: {answer['confidence_score']:.2%}")
             console.print("")
+            logger.info(f"Test {i}/4 completed - Confidence: {answer['confidence_score']:.2%}")
 
         console.print(Panel("✅ All tests completed!", style="green"))
+        logger.info("Test suite completed successfully")
 
     except Exception as e:
+        logger.exception(f"Fatal error in test command: {e}")
         console.print(Panel(f"❌ Error: {e}", style="red"))
         raise typer.Exit(1)
 

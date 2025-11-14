@@ -18,7 +18,7 @@ class QueryType(str, Enum):
     """Types of queries the system can handle"""
 
     EXACT_MATCH = "EXACT_MATCH"  # Specific product numbers, SKUs
-    ATTRIBUTE_FILTER = "ATTRIBUTE_FILTER"  # Filter by specifications (watt, hours, etc.)
+    ATTRIBUTE_FILTER = "ATTRIBUTE_FILTER"  # Filter by specifications (wattage, hours, etc.)
     SEMANTIC = "SEMANTIC"  # Natural language queries
     HYBRID = "HYBRID"  # Combination of semantic + filters
 
@@ -26,11 +26,11 @@ class QueryType(str, Enum):
 class AttributeFilter(BaseModel):
     """Attribute-based filtering criteria"""
 
-    watt_min: Optional[int] = Field(None, description="Minimum wattage")
-    watt_max: Optional[int] = Field(None, description="Maximum wattage")
+    wattage_min: Optional[int] = Field(None, description="Minimum wattage")
+    wattage_max: Optional[int] = Field(None, description="Maximum wattage")
 
-    lebensdauer_min: Optional[int] = Field(None, description="Minimum lifetime in hours")
-    lebensdauer_max: Optional[int] = Field(None, description="Maximum lifetime in hours")
+    lifetime_hours_min: Optional[int] = Field(None, description="Minimum lifetime in hours")
+    lifetime_hours_max: Optional[int] = Field(None, description="Maximum lifetime in hours")
 
     color_temperature: Optional[str] = Field(None, description="Specific color temperature")
 

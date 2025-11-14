@@ -11,10 +11,16 @@ import os
 from pathlib import Path
 import time
 import json
+import logging
 from typing import Dict, Any, List
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+
+# Initialize logging BEFORE any other imports
+from src.utils.logging_config import setup_logging
+setup_logging(console=False, file=True)  # Disable console for Streamlit, keep file logging
+logger = logging.getLogger(__name__)
 
 # Import our agents
 from src.agents.data_loader_agent import DataLoaderAgent, DataLoaderAgentConfig
@@ -22,6 +28,12 @@ from src.agents.research_agent import ResearchAgent, ResearchAgentConfig
 from src.agents.qa_agent import QualityAssuranceAgent, QAAgentConfig
 from src.config.settings import settings
 from src.utils.model_info import get_actual_model_info, get_model_status, get_model_capabilities
+
+# Log Streamlit startup
+logger.info("=" * 80)
+logger.info("Streamlit application started")
+logger.info(f"Working directory: {os.getcwd()}")
+logger.info("=" * 80)
 
 # Page configuration
 st.set_page_config(
@@ -130,19 +142,26 @@ def load_pdfs_batch(limit: int = 10) -> Dict[str, Any]:
 
 def search_query(query: str) -> Dict[str, Any]:
     """Search for information using the RAG system"""
+    logger.info(f"Streamlit search initiated - Query: {query}")
     try:
         if not st.session_state.agents_initialized:
+            logger.error("Search attempted but agents not initialized")
             st.error("❌ Please initialize agents first!")
             return {"error": "Agents not initialized"}
 
         # Execute search
+        logger.info("Executing research agent search")
         search_results = st.session_state.research_agent.search(query)
+        logger.info(f"Search completed - Query type: {search_results.get('query_type')}, Results: {search_results.get('total_results')}")
 
         # Generate answer
+        logger.info("Generating answer with QA agent")
         answer = st.session_state.qa_agent.generate_answer(query, search_results)
+        logger.info(f"Answer generated - Confidence: {answer.get('confidence_score', 0):.2%}")
 
         return answer
     except Exception as e:
+        logger.exception(f"Error during Streamlit search: {e}")
         st.error(f"❌ Error during search: {e}")
         return {"error": str(e)}
 
@@ -219,8 +238,8 @@ def main():
         initialize_agents()
 
     # Main content tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
-        ["📄 PDF Processing", "🔍 Search", "🧪 Test Queries", "📊 System Info"]
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["📄 PDF Processing", "🔍 Search", "🧪 Test Queries", "📊 System Info", "📋 Schema Editor"]
     )
 
     # Tab 1: PDF Processing
@@ -353,7 +372,7 @@ def main():
             },
             {
                 "name": "Attribute Filter (German)",
-                "query": "Gebe mir alle Leuchtmittel mit mindestens 1000 Watt und Lebensdauer von mehr als 400 Stunden.",
+                "query": "Gebe mir alle Leuchtmittel mit mindestens 1000 wattage und Lebensdauer von mehr als 400 Stunden.",
                 "description": "Tests filtering by technical specifications",
             },
             {
@@ -527,6 +546,162 @@ def main():
         with col3:
             if st.button("📊 Refresh Stats"):
                 st.rerun()
+
+    # Tab 5: Schema Editor
+    with tab5:
+        st.markdown('<h2 class="section-header">📋 Product Schema Configuration</h2>', unsafe_allow_html=True)
+
+        st.markdown("""
+        This tab shows the current database schema defined in `src/schemas/product_schema.py`.
+        The schema is automatically used for:
+        - **SQL Database**: Column types and constraints
+        - **LLM Parser**: Extraction targets and field descriptions
+        - **Qdrant Metadata**: Fields stored with vectors for filtering
+
+        To modify the schema, edit `src/schemas/product_schema.py` and restart the application.
+        """)
+
+        try:
+            from src.schemas.product_schema import ProductSpecification
+            from src.utils.schema_utils import SchemaIntrospector, format_schema_for_display
+
+            # Get current schema
+            schema_info = SchemaIntrospector.get_schema_info(ProductSpecification)
+
+            # Display schema information
+            col1, col2 = st.columns([1, 1])
+
+            with col1:
+                st.subheader("📌 Required Fields")
+                st.markdown("*These fields must be present in all products*")
+
+                for field in schema_info["required_fields"]:
+                    with st.expander(f"**{field['name']}** ({field['type']})"):
+                        st.markdown(f"**Description:** {field['description']}")
+                        st.markdown(f"**Type:** `{field['type']}`")
+                        st.markdown(f"**Required:** ✅ Yes")
+                        if "default" in field and field["default"] is not None:
+                            st.markdown(f"**Default:** `{field['default']}`")
+
+            with col2:
+                st.subheader("🔧 Optional Fields")
+                st.markdown("*These fields are extracted if available*")
+
+                for field in schema_info["optional_fields"]:
+                    with st.expander(f"**{field['name']}** ({field['type']})"):
+                        st.markdown(f"**Description:** {field['description']}")
+                        st.markdown(f"**Type:** `{field['type']}`")
+                        st.markdown(f"**Required:** ⚪ No")
+                        if "default" in field and field["default"] is not None:
+                            st.markdown(f"**Default:** `{field['default']}`")
+
+            # SQL Schema section
+            st.markdown("---")
+            st.subheader("💾 SQL Database Schema")
+            st.markdown("*Automatically generated column types for SQLite*")
+
+            sql_schema_data = []
+            for field_name, sql_type in schema_info["sql_schema"].items():
+                sql_schema_data.append({
+                    "Field": field_name,
+                    "SQL Type": sql_type,
+                })
+
+            st.dataframe(sql_schema_data, use_container_width=True, hide_index=True)
+
+            # Qdrant metadata fields
+            st.markdown("---")
+            st.subheader("🔍 Qdrant Vector Metadata")
+            st.markdown("*Fields stored with vectors for filtering and search*")
+
+            metadata_fields = SchemaIntrospector.get_qdrant_metadata_fields(ProductSpecification)
+            st.code(", ".join(metadata_fields))
+
+            # Schema file viewer
+            st.markdown("---")
+            st.subheader("✏️ View Schema File")
+
+            if st.button("📂 Show Schema Source Code", use_container_width=True):
+                schema_file_path = Path(__file__).parent / "src" / "schemas" / "product_schema.py"
+
+                if schema_file_path.exists():
+                    with open(schema_file_path, "r") as f:
+                        schema_content = f.read()
+
+                    st.code(schema_content, language="python", line_numbers=True)
+
+                    st.info("""
+                    **To modify the schema:**
+                    1. Edit `src/schemas/product_schema.py` in your code editor
+                    2. Add, remove, or modify fields in the `ProductSpecification` class
+                    3. Restart the Streamlit app to apply changes
+                    4. Re-process PDFs to update existing data with the new schema
+                    """)
+                else:
+                    st.error(f"Schema file not found: {schema_file_path}")
+
+            # Instructions for schema modification
+            with st.expander("📖 How to Modify the Schema"):
+                st.markdown("""
+                ### Adding a New Field
+
+                ```python
+                # In src/schemas/product_schema.py
+                class ProductSpecification(BaseModel):
+                    # ... existing fields ...
+
+                    # Add your new field
+                    brand: Optional[str] = Field(
+                        None,
+                        description="Product brand or manufacturer"
+                    )
+                ```
+
+                ### Field Type Options
+
+                | Python Type | SQL Type | LLM Type | Example |
+                |-------------|----------|----------|---------|
+                | `str` | TEXT | string | `"SIRIUS HRI 420 W"` |
+                | `int` | INTEGER | integer | `420` |
+                | `float` | REAL | number | `3.14` |
+                | `bool` | INTEGER | boolean | `True` |
+                | `List[str]` | TEXT | array of strings | `["CE", "UL"]` |
+                | `Optional[type]` | type | (optional) | - |
+
+                ### Example: Adding a "Brand" Field
+
+                ```python
+                brand: Optional[str] = Field(
+                    None,
+                    description="Product brand or manufacturer"
+                )
+                ```
+
+                ### After Modifying:
+
+                1. **Restart the app** to load the new schema
+                2. **Re-process PDFs** to extract the new field:
+                   ```bash
+                   python reprocess_pdfs.py
+                   ```
+                3. The LLM parser will automatically try to extract it
+                4. The database will automatically add the column
+                """)
+
+            # Export schema documentation
+            st.markdown("---")
+            if st.button("📄 Download Schema Documentation", use_container_width=True):
+                schema_doc = format_schema_for_display(schema_info)
+                st.download_button(
+                    label="💾 Save Documentation as TXT",
+                    data=schema_doc,
+                    file_name="product_schema_documentation.txt",
+                    mime="text/plain",
+                )
+
+        except Exception as e:
+            st.error(f"❌ Error loading schema: {e}")
+            st.exception(e)
 
 
 if __name__ == "__main__":

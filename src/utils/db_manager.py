@@ -17,55 +17,50 @@ class DatabaseManager:
         self._init_schema()
 
     def _init_schema(self):
-        """Initialize database schema"""
+        """Initialize database schema dynamically from ProductSpecification"""
+        from src.schemas.product_schema import ProductSpecification
+        from src.utils.schema_utils import SchemaIntrospector
+
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
-            # Products table
-            cursor.execute(
-                """
+            # Get SQL schema from ProductSpecification
+            sql_schema = SchemaIntrospector.generate_sql_schema(ProductSpecification)
+
+            # Build CREATE TABLE statement dynamically
+            columns = ["id INTEGER PRIMARY KEY AUTOINCREMENT"]
+
+            for field_name, sql_type in sql_schema.items():
+                # Add UNIQUE constraint for SKU
+                if field_name == "sku":
+                    columns.append(f"{field_name} {sql_type} UNIQUE")
+                # Add default timestamp for extracted_at
+                elif field_name == "extracted_at":
+                    columns.append(f"{field_name} TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+                else:
+                    columns.append(f"{field_name} {sql_type}")
+
+            create_table_sql = f"""
                 CREATE TABLE IF NOT EXISTS products (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    product_name TEXT NOT NULL,
-                    sku TEXT UNIQUE NOT NULL,
-                    primary_product_number TEXT,
-                    watt INTEGER,
-                    voltage TEXT,
-                    current TEXT,
-                    color_temperature TEXT,
-                    color_rendering_index INTEGER,
-                    luminous_flux INTEGER,
-                    beam_angle TEXT,
-                    lebensdauer_stunden INTEGER,
-                    operating_temperature TEXT,
-                    dimensions TEXT,
-                    weight TEXT,
-                    application_area TEXT,
-                    suitable_for TEXT,  -- JSON array
-                    certifications TEXT,  -- JSON array
-                    ip_rating TEXT,
-                    full_description TEXT NOT NULL,
-                    source_pdf TEXT NOT NULL,
-                    extracted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    {', '.join(columns)}
                 )
             """
-            )
 
-            # Create indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_sku ON products(sku)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_product_name ON products(product_name)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_watt ON products(watt)")
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_lebensdauer ON products(lebensdauer_stunden)"
-            )
-            cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_application ON products(application_area)"
-            )
+            cursor.execute(create_table_sql)
+
+            # Create indexes for commonly searched fields
+            index_fields = ["sku", "product_name", "wattage", "lifetime_hours", "application_area"]
+            for field in index_fields:
+                if field in sql_schema:
+                    try:
+                        cursor.execute(
+                            f"CREATE INDEX IF NOT EXISTS idx_{field} ON products({field})"
+                        )
+                    except Exception as e:
+                        logger.warning(f"Could not create index for {field}: {e}")
 
             conn.commit()
-            logger.info(f"Database schema initialized at {self.db_path}")
+            logger.info(f"Database schema initialized dynamically at {self.db_path}")
 
     def insert_product(self, product_data: Dict[str, Any]) -> int:
         """Insert a product and return the ID"""
@@ -79,9 +74,9 @@ class DatabaseManager:
             cursor.execute(
                 """
                 INSERT INTO products (
-                    product_name, sku, primary_product_number, watt, voltage, current,
+                    product_name, sku, primary_product_number, wattage, voltage, current,
                     color_temperature, color_rendering_index, luminous_flux, beam_angle,
-                    lebensdauer_stunden, operating_temperature, dimensions, weight,
+                    lifetime_hours, operating_temperature, dimensions, weight,
                     application_area, suitable_for, certifications, ip_rating,
                     full_description, source_pdf
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -90,14 +85,14 @@ class DatabaseManager:
                     product_data.get("product_name"),
                     product_data.get("sku"),
                     product_data.get("primary_product_number"),
-                    product_data.get("watt"),
+                    product_data.get("wattage"),
                     product_data.get("voltage"),
                     product_data.get("current"),
                     product_data.get("color_temperature"),
                     product_data.get("color_rendering_index"),
                     product_data.get("luminous_flux"),
                     product_data.get("beam_angle"),
-                    product_data.get("lebensdauer_stunden"),
+                    product_data.get("lifetime_hours"),
                     product_data.get("operating_temperature"),
                     product_data.get("dimensions"),
                     product_data.get("weight"),
@@ -133,24 +128,24 @@ class DatabaseManager:
                 cursor.execute(
                     """
                     UPDATE products SET
-                        product_name = ?, primary_product_number = ?, watt = ?, voltage = ?, current = ?,
+                        product_name = ?, primary_product_number = ?, wattage = ?, voltage = ?, current = ?,
                         color_temperature = ?, color_rendering_index = ?, luminous_flux = ?, beam_angle = ?,
-                        lebensdauer_stunden = ?, operating_temperature = ?, dimensions = ?, weight = ?,
+                        lifetime_hours = ?, operating_temperature = ?, dimensions = ?, weight = ?,
                         application_area = ?, suitable_for = ?, certifications = ?, ip_rating = ?,
-                        full_description = ?, source_pdf = ?, updated_at = CURRENT_TIMESTAMP
+                        full_description = ?, source_pdf = ?
                     WHERE sku = ?
                 """,
                     (
                         product_data.get("product_name"),
                         product_data.get("primary_product_number"),
-                        product_data.get("watt"),
+                        product_data.get("wattage"),
                         product_data.get("voltage"),
                         product_data.get("current"),
                         product_data.get("color_temperature"),
                         product_data.get("color_rendering_index"),
                         product_data.get("luminous_flux"),
                         product_data.get("beam_angle"),
-                        product_data.get("lebensdauer_stunden"),
+                        product_data.get("lifetime_hours"),
                         product_data.get("operating_temperature"),
                         product_data.get("dimensions"),
                         product_data.get("weight"),
@@ -169,9 +164,9 @@ class DatabaseManager:
                 cursor.execute(
                     """
                     INSERT INTO products (
-                        product_name, sku, primary_product_number, watt, voltage, current,
+                        product_name, sku, primary_product_number, wattage, voltage, current,
                         color_temperature, color_rendering_index, luminous_flux, beam_angle,
-                        lebensdauer_stunden, operating_temperature, dimensions, weight,
+                        lifetime_hours, operating_temperature, dimensions, weight,
                         application_area, suitable_for, certifications, ip_rating,
                         full_description, source_pdf
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -180,14 +175,14 @@ class DatabaseManager:
                         product_data.get("product_name"),
                         product_data.get("sku"),
                         product_data.get("primary_product_number"),
-                        product_data.get("watt"),
+                        product_data.get("wattage"),
                         product_data.get("voltage"),
                         product_data.get("current"),
                         product_data.get("color_temperature"),
                         product_data.get("color_rendering_index"),
                         product_data.get("luminous_flux"),
                         product_data.get("beam_angle"),
-                        product_data.get("lebensdauer_stunden"),
+                        product_data.get("lifetime_hours"),
                         product_data.get("operating_temperature"),
                         product_data.get("dimensions"),
                         product_data.get("weight"),
@@ -237,21 +232,21 @@ class DatabaseManager:
             conditions = []
             params = []
 
-            if filters.get("watt_min"):
-                conditions.append("watt >= ?")
-                params.append(filters["watt_min"])
+            if filters.get("wattage_min"):
+                conditions.append("wattage >= ?")
+                params.append(filters["wattage_min"])
 
-            if filters.get("watt_max"):
-                conditions.append("watt <= ?")
-                params.append(filters["watt_max"])
+            if filters.get("wattage_max"):
+                conditions.append("wattage <= ?")
+                params.append(filters["wattage_max"])
 
-            if filters.get("lebensdauer_min"):
-                conditions.append("lebensdauer_stunden >= ?")
-                params.append(filters["lebensdauer_min"])
+            if filters.get("lifetime_hours_min"):
+                conditions.append("lifetime_hours >= ?")
+                params.append(filters["lifetime_hours_min"])
 
-            if filters.get("lebensdauer_max"):
-                conditions.append("lebensdauer_stunden <= ?")
-                params.append(filters["lebensdauer_max"])
+            if filters.get("lifetime_hours_max"):
+                conditions.append("lifetime_hours <= ?")
+                params.append(filters["lifetime_hours_max"])
 
             if filters.get("color_temperature"):
                 conditions.append("color_temperature LIKE ?")
@@ -301,15 +296,15 @@ class DatabaseManager:
             cursor.execute("SELECT COUNT(DISTINCT source_pdf) FROM products")
             total_pdfs = cursor.fetchone()[0]
 
-            cursor.execute("SELECT COUNT(*) FROM products WHERE watt IS NOT NULL")
-            products_with_watt = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM products WHERE wattage IS NOT NULL")
+            products_with_wattage = cursor.fetchone()[0]
 
-            cursor.execute("SELECT COUNT(*) FROM products WHERE lebensdauer_stunden IS NOT NULL")
+            cursor.execute("SELECT COUNT(*) FROM products WHERE lifetime_hours IS NOT NULL")
             products_with_lifetime = cursor.fetchone()[0]
 
             return {
                 "total_products": total_products,
                 "total_pdfs": total_pdfs,
-                "products_with_watt": products_with_watt,
+                "products_with_wattage": products_with_wattage,
                 "products_with_lifetime": products_with_lifetime,
             }

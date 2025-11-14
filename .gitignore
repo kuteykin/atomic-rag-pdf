@@ -122,7 +122,14 @@ Thumbs.db
 storage/
 
 data/pdfs/*.pdf
-*.log
+
+# Logs (keep structure but ignore content)
+logs/*.log
+logs/*.log.*
+logs/**/*.log
+logs/**/*.log.*
+!logs/.gitkeep
+!logs/**/.gitkeep
 
 # Poetry
 poetry.lock
