@@ -38,7 +38,11 @@ The system supports queries in multiple languages with automatic translation:
 
 - **PDF Content**: All PDFs are processed in English
 - **User Queries**: Can be asked in any language (German, English, French, Spanish, etc.)
-- **Translation Pipeline**: Queries are automatically translated to English for search, then results are translated back to the original language
+- **Internal Processing**: All internal processing (answer generation, fact-checking, citations) is done in English for consistency and quality
+- **Translation Pipeline**: 
+  1. User queries are automatically translated to English for search
+  2. Answers are generated in English internally
+  3. Final answers are translated back to the original query language
 - **Fallback Handling**: If translation fails, falls back to English
 
 ### Example Multilingual Queries
@@ -443,17 +447,58 @@ The system is designed to handle these specific test queries (all working):
 │               QUALITY ASSURANCE AGENT                           │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │ Tools:                                                    │  │
-│  │  • AnswerGeneratorTool (LLM synthesis)                    │  │
+│  │  • AnswerGeneratorTool (LLM synthesis in English)        │  │
 │  │  • FactCheckerTool (Verify against sources)               │  │
 │  │  • CitationTool (Add source references)                   │  │
 │  │  • ValidationTool (Check completeness & accuracy)         │  │
-│  │  • TranslationTool (Translate answers back)               │  │
+│  │  • TranslationTool (Translate final answer to user language)│  │
 │  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  Input: Query + Retrieved results                               │
-│  Output: Verified, cited answer in user's language              │
+│  Output: Verified, cited answer (generated in English,          │
+│          translated to user's language)                          │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+## 💾 Database Structure
+
+The database schema is **dynamically generated** from the `ProductSpecification` Pydantic model in `src/schemas/product_schema.py`. This ensures consistency between the data model, database structure, and LLM extraction targets.
+
+### Schema Generation
+
+- **Source**: `ProductSpecification` Pydantic model
+- **Generator**: `SchemaIntrospector.generate_sql_schema()` in `src/utils/schema_utils.py`
+- **Database**: SQLite table `products` with columns automatically created from model fields
+- **Type Mapping**:
+  - `str` → `TEXT`
+  - `int` → `INTEGER`
+  - `float` → `REAL`
+  - `bool` → `INTEGER`
+  - `List[str]` → `TEXT` (stored as JSON string)
+  - `Optional[type]` → `type` (nullable)
+
+### Database Features
+
+- **Dynamic Schema**: Automatically creates/updates table structure from Pydantic model
+- **Unique Constraints**: SKU field has UNIQUE constraint
+- **Indexes**: Automatically created for commonly searched fields (sku, product_name, wattage, lifetime_hours, application_area)
+- **Upsert Support**: Handles duplicate products by SKU
+- **Metadata Tracking**: `extracted_at` timestamp automatically set
+
+### Product Schema Fields
+
+The `ProductSpecification` model includes:
+
+- **Identification**: `product_name`, `sku`, `primary_product_number`
+- **Technical Specs**: `wattage`, `voltage`, `current`
+- **Light Characteristics**: `color_temperature`, `color_rendering_index`, `luminous_flux`, `beam_angle`
+- **Durability**: `lifetime_hours`, `operating_temperature`
+- **Physical**: `dimensions`, `weight`
+- **Application**: `application_area`, `suitable_for` (list), `certifications` (list), `ip_rating`
+- **Content**: `full_description` (for embedding generation)
+- **Metadata**: `source_pdf`, `extracted_at`
+
+To modify the database structure, simply update `ProductSpecification` in `src/schemas/product_schema.py` and the schema will be automatically updated on next initialization.
 
 ## 📈 Scalability Analysis for 10,000+ PDFs
 

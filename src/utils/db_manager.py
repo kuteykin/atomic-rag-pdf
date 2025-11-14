@@ -273,7 +273,7 @@ class DatabaseManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM products ORDER BY created_at DESC")
+            cursor.execute("SELECT * FROM products ORDER BY extracted_at DESC")
             return [dict(row) for row in cursor.fetchall()]
 
     def get_product_by_id(self, product_id: int) -> Optional[Dict[str, Any]]:
@@ -302,9 +302,14 @@ class DatabaseManager:
             cursor.execute("SELECT COUNT(*) FROM products WHERE lifetime_hours IS NOT NULL")
             products_with_lifetime = cursor.fetchone()[0]
 
+            # Calculate database size
+            db_size_bytes = self.db_path.stat().st_size if self.db_path.exists() else 0
+            db_size_mb = db_size_bytes / (1024 * 1024)
+
             return {
                 "total_products": total_products,
                 "total_pdfs": total_pdfs,
                 "products_with_wattage": products_with_wattage,
                 "products_with_lifetime": products_with_lifetime,
+                "db_size_mb": db_size_mb,
             }
