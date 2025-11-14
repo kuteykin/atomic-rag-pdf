@@ -64,7 +64,7 @@ class QualityAssuranceAgent(BaseAgent):
         # Use English query for answer generation
         english_query = search_results.get("english_query", query)
 
-        # Step 1: Generate initial answer in English
+        # Step 1: Generate initial answer in English (internal processing)
         draft_answer = self.generator_tool.generate(
             query=english_query, context=search_results["top_results"]
         )
@@ -81,7 +81,7 @@ class QualityAssuranceAgent(BaseAgent):
             fact_check=fact_check_result,
         )
 
-        # Step 4: Translate answer back to original language if needed
+        # Step 4: Translate final answer to original query language if needed
         final_answer = cited_answer
         if translation_needed and detected_language != "en":
             final_answer = self.translation_tool.translate_from_english(

@@ -2,6 +2,7 @@
 
 from src.lib.base_agent import BaseAgent, BaseAgentConfig
 from pydantic import Field
+from typing import List
 from src.config.constants import (
     DEFAULT_PDF_DIRECTORY,
     DEFAULT_SQLITE_PATH,
@@ -158,7 +159,7 @@ class DataLoaderAgent(BaseAgent):
         text: str,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         overlap: int = DEFAULT_CHUNK_OVERLAP,
-    ) -> list[str]:
+    ) -> List[str]:
         """Split text into overlapping chunks"""
         if not text.strip():
             return []

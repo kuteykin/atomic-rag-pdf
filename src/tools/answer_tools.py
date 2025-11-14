@@ -29,12 +29,12 @@ class AnswerGeneratorTool(BaseTool):
         self.model = config.model
 
     def generate(self, query: str, context: List[Dict[str, Any]]) -> str:
-        """Generate answer from query and context"""
+        """Generate answer from query and context in English"""
         try:
             # Prepare context text
             context_text = self._prepare_context(context)
 
-            # Create prompt
+            # Create prompt (always in English)
             prompt = self._create_prompt(query, context_text)
 
             # Call Mistral API
@@ -44,43 +44,43 @@ class AnswerGeneratorTool(BaseTool):
 
         except Exception as e:
             logger.error(f"Error generating answer: {e}")
-            return f"Entschuldigung, ich konnte keine Antwort generieren. Fehler: {str(e)}"
+            return f"Sorry, I could not generate an answer. Error: {str(e)}"
 
     def _prepare_context(self, context: List[Dict[str, Any]]) -> str:
-        """Prepare context text from search results"""
+        """Prepare context text from search results in English"""
         context_parts = []
 
         for i, result in enumerate(context, 1):
-            product_name = result.get("product_name", "Unbekanntes Produkt")
+            product_name = result.get("product_name", "Unknown Product")
             sku = result.get("sku", "N/A")
             text = result.get("text", result.get("full_description", ""))
 
             context_part = f"""
-Produkt {i}: {product_name}
+Product {i}: {product_name}
 SKU: {sku}
-Beschreibung: {text}
+Description: {text}
 """
             context_parts.append(context_part)
 
         return "\n".join(context_parts)
 
     def _create_prompt(self, query: str, context: str) -> str:
-        """Create prompt for LLM"""
-        prompt = f"""Du bist ein Experte für Beleuchtungsprodukte. Beantworte die folgende Frage basierend auf den bereitgestellten Produktinformationen.
+        """Create prompt for LLM in English"""
+        prompt = f"""You are an expert in lighting products. Answer the following question based on the provided product information.
 
-Frage: {query}
+Question: {query}
 
-Produktinformationen:
+Product Information:
 {context}
 
-Anweisungen:
-1. Beantworte die Frage präzise und vollständig auf Deutsch
-2. Verwende nur die bereitgestellten Informationen
-3. Wenn die Information nicht verfügbar ist, sage das explizit
-4. Erwähne relevante Produktnamen und SKUs
-5. Sei hilfreich und professionell
+Instructions:
+1. Answer the question precisely and completely in English
+2. Use only the provided information
+3. If the information is not available, state this explicitly
+4. Mention relevant product names and SKUs
+5. Be helpful and professional
 
-Antwort:"""
+Answer:"""
 
         return prompt
 
@@ -107,14 +107,14 @@ Antwort:"""
                 return result["choices"][0]["message"]["content"]
             else:
                 logger.error(f"Mistral API error: {response.status_code} - {response.text}")
-                return "Fehler beim Generieren der Antwort."
+                return "Error generating answer."
 
         except Exception as e:
             logger.error(f"Error calling Mistral API: {e}")
-            return "Fehler beim Generieren der Antwort."
+            return "Error generating answer."
 
-    def run(self, query: str, context: list = None, **kwargs) -> dict:
-        """Required by BaseTool - generates answers"""
+    def run(self, query: str, context: List[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+        """Required by BaseTool - generates answers in English"""
         if context:
             answer = self.generate(query, context)
             return {"answer": answer}
@@ -180,15 +180,16 @@ class FactCheckerTool(BaseTool):
             sentence = sentence.strip()
             if len(sentence) > 10:  # Only consider substantial sentences
                 # Look for sentences with numbers or specific facts
+                # Multi-language keywords for technical terms
                 if re.search(r"\d+", sentence) or any(
                     keyword in sentence.lower()
                     for keyword in [
-                        "wattage",
-                        "stunden",
-                        "kelvin",
-                        "lumen",
-                        "volt",
-                        "ampere",
+                        "wattage", "watt", "watts",
+                        "stunden", "hours", "heures", "horas",
+                        "kelvin", "k",
+                        "lumen", "lm",
+                        "volt", "volts", "v",
+                        "ampere", "amps", "a",
                         "ip",
                         "cri",
                     ]
@@ -225,7 +226,7 @@ class FactCheckerTool(BaseTool):
 
         return {"claim": claim, "verified": False, "source": None, "confidence": 0.0}
 
-    def run(self, answer: str = "", sources: list = None, **kwargs) -> dict:
+    def run(self, answer: str = "", sources: List[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """Required by BaseTool - verifies facts"""
         if answer and sources:
             return self.verify(answer, sources)
@@ -266,13 +267,13 @@ class CitationTool(BaseTool):
                     )
                     citations.append(citation)
 
-            # Add source references at the end
+            # Add source references at the end (language-agnostic format)
             if sources:
-                answer += "\n\n**Quellen:**\n"
+                answer += "\n\n**Sources:**\n"
                 for i, source in enumerate(sources, 1):
-                    product_name = source.get("product_name", "Unbekanntes Produkt")
+                    product_name = source.get("product_name", "Unknown Product")
                     sku = source.get("sku", "N/A")
-                    pdf_source = source.get("source_pdf", "Unbekannte PDF")
+                    pdf_source = source.get("source_pdf", "Unknown PDF")
 
                     answer += f"{i}. {product_name} (SKU: {sku}) - {pdf_source}\n"
 
@@ -282,10 +283,10 @@ class CitationTool(BaseTool):
             logger.error(f"Error adding citations: {e}")
             return answer
 
-    def run(self, answer: str = "", sources: list = None, **kwargs) -> dict:
+    def run(self, answer: str = "", sources: List[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """Required by BaseTool - adds citations"""
         if answer and sources:
-            cited_answer = self.add_citations(answer, sources)
+            cited_answer = self.add_citations(answer, sources, {})
             return {"cited_answer": cited_answer}
         else:
             return {"cited_answer": answer, "message": "No sources provided"}
@@ -347,11 +348,25 @@ class ValidationTool(BaseTool):
         query_lower = query.lower()
         answer_lower = answer.lower()
 
-        # Check for common completeness indicators
+        # Check for common completeness indicators (multi-language)
         completeness_indicators = [
-            "entschuldigung" in answer_lower,  # Apology suggests incomplete
-            "nicht verfügbar" in answer_lower,  # Not available
-            "keine information" in answer_lower,  # No information
+            # English
+            "sorry" in answer_lower,
+            "not available" in answer_lower,
+            "no information" in answer_lower,
+            # German
+            "entschuldigung" in answer_lower,
+            "nicht verfügbar" in answer_lower,
+            "keine information" in answer_lower,
+            # French
+            "désolé" in answer_lower,
+            "non disponible" in answer_lower,
+            "aucune information" in answer_lower,
+            # Spanish
+            "lo siento" in answer_lower,
+            "no disponible" in answer_lower,
+            "sin información" in answer_lower,
+            # Generic
             len(answer) < 50,  # Very short answer
         ]
 
@@ -401,20 +416,21 @@ class ValidationTool(BaseTool):
         warnings = []
 
         if len(sources) == 0:
-            warnings.append("Keine Quellen gefunden")
+            warnings.append("No sources found")
 
         if len(sources) < 2:
-            warnings.append("Wenige Quellen verfügbar")
+            warnings.append("Few sources available")
 
         if len(answer) < 100:
-            warnings.append("Antwort ist sehr kurz")
+            warnings.append("Answer is very short")
 
-        if "entschuldigung" in answer.lower():
-            warnings.append("Unvollständige Informationen verfügbar")
+        answer_lower = answer.lower()
+        if any(phrase in answer_lower for phrase in ["sorry", "entschuldigung", "désolé", "lo siento"]):
+            warnings.append("Incomplete information available")
 
         return warnings
 
-    def run(self, query: str = "", answer: str = "", sources: list = None, **kwargs) -> dict:
+    def run(self, query: str = "", answer: str = "", sources: List[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """Required by BaseTool - validates answers"""
         if query and answer and sources:
             validation = self.validate(query, answer, sources)

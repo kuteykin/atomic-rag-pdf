@@ -3,6 +3,7 @@
 from src.lib.base_tool import BaseTool, BaseToolConfig
 from sentence_transformers import CrossEncoder
 from pydantic import Field
+from typing import List, Dict, Any
 from src.config.constants import DEFAULT_RERANK_MODEL
 
 
@@ -20,7 +21,7 @@ class RerankerTool(BaseTool):
         super().__init__(config or RerankerToolConfig())
         self.model = CrossEncoder(self.config.model_name)
 
-    def rerank(self, query: str, documents: list[dict], top_k: int = 5) -> list[dict]:
+    def rerank(self, query: str, documents: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
         """Rerank documents by relevance to query"""
 
         # Prepare pairs for cross-encoder
@@ -44,7 +45,7 @@ class RerankerTool(BaseTool):
 
         return scored_docs[:top_k]
 
-    def run(self, query: str, documents: list = None, top_k: int = 5, **kwargs) -> dict:
+    def run(self, query: str, documents: List[Dict[str, Any]] = None, top_k: int = 5, **kwargs) -> Dict[str, Any]:
         """Required by BaseTool - reranks documents"""
         if documents:
             return {"reranked_documents": self.rerank(query, documents, top_k)}
